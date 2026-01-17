@@ -63,11 +63,33 @@ const Payments = () => {
     const amount = Number(product.selling_price || product.price) || 0;
     const mrp = Number(product.mrp) || 0;
 
-    const getPaymentUrl = () => {
+    const getPaymentUrl = (activeTab) => {
         const upiId = upiConfig.upi || "";
-        handlePaymentComplete()
-        return `upi://pay?pa=${encodeURIComponent(upiId)}&pn=Shopping&am=${amount}&cu=INR`;
+        const name = "Shopping";
+        const amt = amount;
+
+        const encodedUPI = encodeURIComponent(upiId);
+        const encodedName = encodeURIComponent(name);
+
+        switch (activeTab) {
+            case "gpay":
+                return `tez://upi/pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
+
+            case "phonepe":
+                return `phonepe://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
+
+            case "paytm":
+                return `paytmmp://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
+
+            case "bhim":
+                return `bhim://upi/pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
+
+            default:
+                // Fallback – opens UPI chooser
+                return `upi://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
+        }
     };
+
     const handlePaymentMethodSelect = (method) => {
         setSelectedMethod(method);
 
@@ -684,7 +706,7 @@ const Payments = () => {
                             pointerEvents: activeTab ? 'auto' : 'none'
                         }}
                     >
-                        CONTINUE
+                        Pay with {activeTab?.toUpperCase()}
                     </a>
                 </div>
             </div>
