@@ -80,7 +80,6 @@ export default function Card({ item }) {
         <div
           style={{
             padding: "10px 12px",
-            borderBottom: "1px solid #f0f0f0",
             minHeight: "42px",
           }}
         >
