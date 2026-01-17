@@ -8,7 +8,7 @@ import { AiFillStar } from 'react-icons/ai';
 import { IoMdArrowBack } from 'react-icons/io';
 import tracking from '@/utils/tracking';
 
-export default function ProductDetails() {
+export default function extraImagesProductDetails() {
   const router = useRouter();
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState(6);
@@ -511,6 +511,17 @@ export default function ProductDetails() {
       <div style={{ background: '#fff', padding: '16px', marginTop: '8px', marginBottom: '80px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>Product Details</h2>
         <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#212121', whiteSpace: 'pre-wrap' }}>
+          {product?.extraImages?.map((el, index) => {
+            return (
+              <img
+                key={index}
+                src={el}
+                alt="extra image"
+                style={{ width: '100%', marginBottom: '12px' }}
+              />
+            );
+          })}
+
           {product.description || product.features || 'No description available'}
         </div>
       </div>
