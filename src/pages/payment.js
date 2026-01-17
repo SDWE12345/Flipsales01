@@ -69,24 +69,19 @@ const Payments = () => {
         const amt = amount;
 
         const encodedUPI = encodeURIComponent(upiId);
-        const encodedName = encodeURIComponent(name);
 
         switch (activeTab) {
             case "gpay":
-                return `tez://upi/pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
-
+               return `tez://upi/pay?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=${encodeURIComponent("Payment to Merchant")}`;
             case "phonepe":
-                return `phonepe://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
-
+                return `phonepe://pay?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=Payment`;
             case "paytm":
-                return `paytmmp://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
-
+                return `paytmmp://cash_wallet?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=1109653558&tr=1109653558&url=&mode=02&purpose=00&orgid=159002&sign=MEQCIDsRrRTBN5u+J9c16TUURJ4IMiPQQ/Sj1WXW7Ane85mYAiBuwEHt/lPXmMKRjFFnz6+jekgTsKWwyTx44qlCXFkfpQ==&featuretype=money_transfer`;
             case "bhim":
-                return `bhim://upi/pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
-
+                return `upi://pay?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=Payment`;
             default:
-                // Fallback – opens UPI chooser
-                return `upi://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR`;
+                return `upi://pay?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=Payment`;
+    
         }
     };
 
