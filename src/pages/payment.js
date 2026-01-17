@@ -681,7 +681,7 @@ const Payments = () => {
                         </div>
                     </div>
                     <a
-                        href={getPaymentUrl()}
+                        href={getPaymentUrl(activeTab)}
                         style={{
                             flex: 1,
                             maxWidth: '200px',
