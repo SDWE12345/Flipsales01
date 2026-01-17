@@ -19,7 +19,11 @@ export default function extraImagesProductDetails() {
   const sliderRef = useRef(null);
 
   useEffect(() => {
-    tracking.trackProductView(product);
+    tracking.trackProductView(product, {
+      referrer: 'search',
+      campaign: 'summer_sale'
+    });
+
     loadProduct();
   }, []);
 
