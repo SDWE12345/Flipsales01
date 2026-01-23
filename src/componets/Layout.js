@@ -1,8 +1,20 @@
 import Script from 'next/script';
 
+import { useEffect, useState } from 'react';
 const FACEBOOK_PIXEL_ID = '1782903419326904';
 
 export default function Layout({ children }) {
+  const [metaPixelId, setMetaPixelId] = useState("000000000000000");
+
+  // Get pixel ID from sessionStorage only on client-side
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage) {
+      const pixelId = localStorage.getItem('pixelId');
+      if (pixelId) {
+        setMetaPixelId(pixelId);
+      }
+    }
+  }, []);
   return (
     <>
       {/* Facebook Pixel */}
@@ -20,7 +32,7 @@ export default function Layout({ children }) {
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
 
-            fbq('init', '${FACEBOOK_PIXEL_ID}');
+            fbq('init', '${metaPixelId}');
             fbq('track', 'PageView');
           `
         }}
@@ -31,7 +43,7 @@ export default function Layout({ children }) {
           height="1"
           width="1"
           style={{ display: 'none' }}
-          src={`https://www.facebook.com/tr?id=${FACEBOOK_PIXEL_ID}&ev=PageView&noscript=1`}
+          src={`https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1`}
         />
       </noscript>
 
@@ -39,3 +51,4 @@ export default function Layout({ children }) {
     </>
   );
 }
+
