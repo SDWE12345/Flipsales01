@@ -22,7 +22,7 @@ const ProductTable = () => {
         try {
             const response = await fetch('/api/products');
             const data = await response.json();
-            setProducts(data);
+            setProducts(data['products '] || data.products || []);
         } catch (error) {
             console.error('Error fetching products:', error);
             addToast('Error loading products', { appearance: 'error' });
