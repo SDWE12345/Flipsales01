@@ -1,58 +1,90 @@
 // pages/api/Upichange.js
-import { connectToDatabase } from '../../utils/mongodb';
-import Upichange from '../../models/Upichange';
-import FacebookPixel from '../../models/FacebookPixel';
+import clientPromise from '../../lib/mongodb';
 import authenticateToken from './middleware/auth';
 
-connectToDatabase();
-
 export default async function handler(req, res) {
-  if (req.method === 'GET') {
-    try {
-      // Fetch Facebook Pixel data without authentication for 'GET'
-      const pixelData = await Upichange.findOne({});
-      const pixelData1 = await FacebookPixel.findOne({});
-      res.status(200).json({ upi: pixelData, pixelId: pixelData1 });
-    } catch (error) {
-      res.status(500).json({ message: 'Internal Server Error' });
+  try {
+    const client = await clientPromise;
+    const db = client.db('yourDbName');
+    const upiCollection = db.collection('upichanges');
+    const pixelCollection = db.collection('facebookpixels');
+
+    if (req.method === 'GET') {
+      // Public endpoint - no authentication needed
+      // Use Promise.all for parallel queries (faster)
+      const [upiData, pixelData] = await Promise.all([
+        upiCollection.findOne({}, { sort: { _id: -1 } }),
+        pixelCollection.findOne({}, { sort: { _id: -1 } })
+      ]);
+
+      return res.status(200).json({ 
+        upi: upiData || null, 
+        pixelId: pixelData || null 
+      });
     }
-  } else {
-    // For 'POST' and 'PUT', apply the authentication middleware
-    authenticateToken(req, res, () => handleRequest(req, res));
+
+    // For POST and PUT, require authentication
+    if (req.method === 'POST' || req.method === 'PUT') {
+      // Use middleware with promise
+      return authenticateToken(req, res, async () => {
+        await handleAuthenticatedRequest(req, res, upiCollection);
+      });
+    }
+
+    return res.status(405).json({ 
+      status: 0, 
+      message: 'Method Not Allowed' 
+    });
+
+  } catch (error) {
+    console.error('UPI API Error:', error);
+    res.status(500).json({ 
+      status: 0, 
+      message: 'Internal Server Error',
+      error: error.message 
+    });
   }
 }
 
-async function handleRequest(req, res) {
-  const { method } = req;
+async function handleAuthenticatedRequest(req, res, collection) {
+  try {
+    const existingData = await collection.findOne({});
 
-  switch (method) {
-    case 'POST':
-    case 'PUT':
-      try {
-        // Create or update Facebook Pixel data with authentication
-        const existingPixelData = await Upichange.findOne({});
+    if (existingData) {
+      // Update existing record
+      const result = await collection.findOneAndUpdate(
+        { _id: existingData._id },
+        { $set: { ...req.body, updatedAt: new Date() } },
+        { returnDocument: 'after' }
+      );
 
-        if (existingPixelData) {
-          // Update existing record
-          const updatedPixelData = await Upichange.findByIdAndUpdate(
-            existingPixelData._id,
-            req.body,
-            { new: true }
-          );
-          res.status(200).json({ status: 1, updatedPixelData });
-        } else {
-          // Create new record
-          const newPixelData = new Upichange(req.body);
-          const savedPixelData = await newPixelData.save();
-          res.status(201).json({ status: 1, savedPixelData });
-        }
-      } catch (error) {
-        res.status(500).json({ status: 0, message: 'Internal Server Error' });
-      }
-      break;
+      return res.status(200).json({ 
+        status: 1, 
+        message: 'Updated successfully',
+        data: result 
+      });
+    } else {
+      // Create new record
+      const newData = {
+        ...req.body,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-    default:
-      res.status(405).json({ status: 0, message: 'Method Not Allowed' });
-      break;
+      const result = await collection.insertOne(newData);
+
+      return res.status(201).json({ 
+        status: 1, 
+        message: 'Created successfully',
+        data: { _id: result.insertedId, ...newData }
+      });
+    }
+  } catch (error) {
+    console.error('Update Error:', error);
+    return res.status(500).json({ 
+      status: 0, 
+      message: 'Failed to save data',
+      error: error.message 
+    });
   }
 }

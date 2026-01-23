@@ -1,266 +1,472 @@
-// components/ProductForm.js
-import { useFormik } from 'formik';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import 'react-quill/dist/quill.snow.css';
 import { useToasts } from 'react-toast-notifications';
-
-import styles from '../styles/ProductForm.module.css'; // Import your custom CSS file
-
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import Navigation from './Navigation';
 
 const Settings = () => {
     const { addToast } = useToasts();
-    const [products, setProducts] = useState({});
-    const [products1, setProducts1] = useState("");
-    console.log(products);
+    const [upiSettings, setUpiSettings] = useState({
+        upi: '',
+        upi2: '',
+        Bhim: false,
+        Gpay: false,
+        Paytm: false,
+        Phonepe: false,
+        WPay: false,
+    });
+    const [pixelId, setPixelId] = useState('');
+    const [isLoadingData, setIsLoadingData] = useState(true);
+    const [isSubmittingUpi, setIsSubmittingUpi] = useState(false);
+    const [isSubmittingPixel, setIsSubmittingPixel] = useState(false);
 
     useEffect(() => {
-        fetchProducts();
+        fetchSettings();
     }, []);
 
-    const fetchProducts = async () => {
-        try {
-            let headersList = {
-                "Accept": "*/*",
-                "User-Agent": "Thunder Client (https://www.thunderclient.com)",
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("token")}`
-            };
+    const getAuthHeaders = () => ({
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+    });
 
+    const fetchSettings = async () => {
+        setIsLoadingData(true);
+        try {
             const response = await fetch('/api/upichange', {
                 method: 'GET',
-                headers: headersList,
+                headers: getAuthHeaders(),
             });
 
             if (response.ok) {
                 const data = await response.json();
-                console.log(data.upi);
-                setProducts({ upi: data.upi.upi,  upi2: data.upi.upi2, Bhim: data.upi.Bhim, Gpay: data.upi.Gpay, Paytm: data.upi.Paytm, Phonepe: data.upi.Phonepe, WPay: data.upi.WPay });
-                setProducts1(data?.pixelId.FacebookPixel);
+                setUpiSettings({
+                    upi: data.upi.upi || '',
+                    upi2: data.upi.upi2 || '',
+                    Bhim: data.upi.Bhim || false,
+                    Gpay: data.upi.Gpay || false,
+                    Paytm: data.upi.Paytm || false,
+                    Phonepe: data.upi.Phonepe || false,
+                    WPay: data.upi.WPay || false,
+                });
+                setPixelId(data?.pixelId?.FacebookPixel || '');
             } else {
+                addToast('Failed to load settings', { appearance: 'error' });
             }
         } catch (error) {
+            console.error('Error fetching settings:', error);
+            addToast('Error loading settings', { appearance: 'error' });
+        } finally {
+            setIsLoadingData(false);
         }
     };
 
-    const formik = useFormik({
-        initialValues: {
-            upi: products.upi,
-            upi2: products.upi2,
-            Gpay: products.Gpay,
-            Paytm: products.Paytm,
-            Phonepe: products.Phonepe,
-            WPay: products.WPay,
-        },
-        onSubmit: async (values) => {
-            console.log("values", products);
-            try {
-                let headersList = {
-                    "Accept": "*/*",
-                    "User-Agent": "Thunder Client (https://www.thunderclient.com)",
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`
-                };
+    const handleUpiSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmittingUpi(true);
 
-                let bodyContent = JSON.stringify({
-                    upi: products.upi,
-                    upi2: products.upi2,
-                    Gpay: products.Gpay,
-                    Paytm: products.Paytm,
-                    Phonepe: products.Phonepe,
-                    WPay: products.WPay,
-                });
+        try {
+            const response = await fetch('/api/upichange', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(upiSettings),
+            });
 
-                let response = await fetch("/api/upichange", {
-                    method: "POST",
-                    body: bodyContent,
-                    headers: headersList
-                });
-
-                let data = await response.json();
-                if (data['status'] === 1) {
-                    addToast("UPI submitted successfully", { appearance: 'success' });
-                } else {
-                    addToast('Error submitting UPI', { appearance: 'error' });
-                }
-            } catch (error) {
-                addToast('Error submitting product', { appearance: 'error' });
+            const data = await response.json();
+            
+            if (data.status === 1) {
+                addToast('UPI settings updated successfully', { appearance: 'success' });
+            } else {
+                addToast(data.message || 'Error updating UPI settings', { appearance: 'error' });
             }
-        },
-    });
+        } catch (error) {
+            console.error('Error submitting UPI:', error);
+            addToast('Network error. Please try again.', { appearance: 'error' });
+        } finally {
+            setIsSubmittingUpi(false);
+        }
+    };
 
-    const formik1 = useFormik({
-        initialValues: {
-            pixelId: products1,
-        },
-        onSubmit: async () => {
-            try {
-                let headersList = {
-                    "Accept": "*/*",
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`
-                };
+    const handlePixelSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmittingPixel(true);
 
-                let bodyContent = JSON.stringify({
-                    "pixelId": products1,
-                });
+        try {
+            const response = await fetch('/api/facebookPixel', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ pixelId }),
+            });
 
-                let response = await fetch("/api/facebookPixel", {
-                    method: "POST",
-                    body: bodyContent,
-                    headers: headersList
-                });
-
-                let data = await response.json();
-                if (data['status'] === 1) {
-                    addToast("Pixel submitted successfully", { appearance: 'success' });
-                } else {
-                    addToast('Error submitting Pixel', { appearance: 'error' });
-                }
-            } catch (error) {
-                addToast('Error submitting product', { appearance: 'error' });
+            const data = await response.json();
+            
+            if (data.status === 1) {
+                addToast('Facebook Pixel updated successfully', { appearance: 'success' });
+            } else {
+                addToast(data.message || 'Error updating Pixel', { appearance: 'error' });
             }
-        },
-    });
+        } catch (error) {
+            console.error('Error submitting Pixel:', error);
+            addToast('Network error. Please try again.', { appearance: 'error' });
+        } finally {
+            setIsSubmittingPixel(false);
+        }
+    };
 
-    console.log(products?.Gpay);
+    const handleInputChange = (field, value) => {
+        setUpiSettings(prev => ({ ...prev, [field]: value }));
+    };
+
+    const paymentMethods = [
+        { id: 'gpay', field: 'Gpay', label: 'Google Pay', icon: '💳', color: '#4285F4' },
+        { id: 'phonepe', field: 'Phonepe', label: 'PhonePe', icon: '📱', color: '#5F259F' },
+        { id: 'paytm', field: 'Paytm', label: 'Paytm', icon: '💰', color: '#00BAF2' },
+        { id: 'bhim', field: 'Bhim', label: 'BHIM UPI', icon: '🏦', color: '#FF6B35' },
+        { id: 'wpay', field: 'WPay', label: 'W-Pay', icon: '💵', color: '#00C853' },
+    ];
+
+    if (isLoadingData) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            }}>
+                <div style={{
+                    textAlign: 'center',
+                    color: 'white'
+                }}>
+                    <div className="spinner-border mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <div style={{ fontSize: '1.0.5rem', fontWeight: '500' }}>Loading Settings...</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <>
-            <nav className={`navbar navbar-expand-lg navbar-light bg-light px-5 ${styles.customNavbar}`}>
-                <a className="navbar-brand" href="#">Admin</a>
-                <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-                    <span className="navbar-toggler-icon"></span>
-                </button>
-                <div className="navbar-nav">
-                    <Link className="nav-item nav-link" href="/Producttable">Product</Link>
-                    <Link className="nav-item nav-link" href="/settings">Setting</Link>
+        <div style={{ minHeight: '100vh', background: '#f5f7fa' }}>
+          <Navigation/>
+            <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.5rem' }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '0.5rem',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
+                        transition: 'transform 0.2s, box-shadow 0.2s'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '1.5rem',
+                                marginRight: '1rem'
+                            }}>
+                                💳
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>
+                                    UPI Configuration
+                                </h2>
+                                <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
+                                    Manage your UPI payment IDs
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', fontWeight: '600', color: '#334155', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                                PRIMARY UPI ID
+                            </label>
+                            <input
+                                type="text"
+                                value={upiSettings.upi}
+                                onChange={(e) => handleInputChange('upi', e.target.value)}
+                                placeholder="example@upi"
+                                disabled={isSubmittingUpi}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem 1rem',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '10px',
+                                    fontSize: '1rem',
+                                    transition: 'all 0.2s',
+                                    outline: 'none'
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#667eea';
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = '#e2e8f0';
+                                    e.target.style.boxShadow = 'none';
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', fontWeight: '600', color: '#334155', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                                SECONDARY UPI ID
+                            </label>
+                            <input
+                                type="text"
+                                value={upiSettings.upi2}
+                                onChange={(e) => handleInputChange('upi2', e.target.value)}
+                                placeholder="backup@upi"
+                                disabled={isSubmittingUpi}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem 1rem',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '10px',
+                                    fontSize: '1rem',
+                                    transition: 'all 0.2s',
+                                    outline: 'none'
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#667eea';
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = '#e2e8f0';
+                                    e.target.style.boxShadow = 'none';
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: '0.5rem' }}>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1e293b', marginBottom: '1rem' }}>
+                                Payment Methods
+                            </h3>
+                            <div style={{ display: 'grid', gap: '0.75rem' }}>
+                                {paymentMethods.map((method) => (
+                                    <div
+                                        key={method.id}
+                                        onClick={() => !isSubmittingUpi && handleInputChange(method.field, !upiSettings[method.field])}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '1rem 1.25rem',
+                                            border: `2px solid ${upiSettings[method.field] ? method.color : '#e2e8f0'}`,
+                                            borderRadius: '12px',
+                                            cursor: isSubmittingUpi ? 'not-allowed' : 'pointer',
+                                            transition: 'all 0.2s',
+                                            background: upiSettings[method.field] ? `${method.color}10` : 'white',
+                                            opacity: isSubmittingUpi ? 0.6 : 1
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!isSubmittingUpi) {
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <span style={{ fontSize: '1.5rem' }}>{method.icon}</span>
+                                            <span style={{ fontWeight: '600', color: '#1e293b' }}>{method.label}</span>
+                                        </div>
+                                        <div style={{
+                                            width: '52px',
+                                            height: '28px',
+                                            borderRadius: '14px',
+                                            background: upiSettings[method.field] ? method.color : '#cbd5e1',
+                                            position: 'relative',
+                                            transition: 'all 0.3s'
+                                        }}>
+                                            <div style={{
+                                                width: '24px',
+                                                height: '24px',
+                                                borderRadius: '50%',
+                                                background: 'white',
+                                                position: 'absolute',
+                                                top: '2px',
+                                                left: upiSettings[method.field] ? '26px' : '2px',
+                                                transition: 'all 0.3s',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                            }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleUpiSubmit}
+                            disabled={isSubmittingUpi}
+                            style={{
+                                width: '100%',
+                                padding: '0.875rem',
+                                background: isSubmittingUpi ? '#94a3b8' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '10px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: isSubmittingUpi ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isSubmittingUpi) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(102, 126, 234, 0.4)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}
+                        >
+                            {isSubmittingUpi ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    Saving Changes...
+                                </>
+                            ) : (
+                                <>
+                                    <span>💾</span>
+                                    Save UPI Settings
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '0.5rem',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
+                        transition: 'transform 0.2s, box-shadow 0.2s'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #1877f2 0%, #0c63d4 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '1.5rem',
+                                marginRight: '1rem'
+                            }}>
+                                📊
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>
+                                    Facebook Pixel
+                                </h2>
+                                <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
+                                    Configure tracking integration
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', fontWeight: '600', color: '#334155', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                                PIXEL ID / TRACKING CODE
+                            </label>
+                            <textarea
+                                value={pixelId}
+                                onChange={(e) => setPixelId(e.target.value)}
+                                placeholder="Enter your Facebook Pixel ID or complete tracking code..."
+                                disabled={isSubmittingPixel}
+                                rows={8}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem 1rem',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '10px',
+                                    fontSize: '0.875rem',
+                                    fontFamily: 'monospace',
+                                    transition: 'all 0.2s',
+                                    outline: 'none',
+                                    resize: 'vertical'
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#1877f2';
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(24, 119, 242, 0.1)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = '#e2e8f0';
+                                    e.target.style.boxShadow = 'none';
+                                }}
+                            />
+                            <div style={{ 
+                                marginTop: '0.5rem',
+                                padding: '0.75rem',
+                                background: '#f8fafc',
+                                borderRadius: '8px',
+                                fontSize: '0.75rem',
+                                color: '#64748b',
+                                lineHeight: '1.5'
+                            }}>
+                                💡 <strong>Tip:</strong> You can paste either just the Pixel ID (e.g., 1234567890) or the complete tracking code snippet from Facebook Business Manager.
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handlePixelSubmit}
+                            disabled={isSubmittingPixel}
+                            style={{
+                                width: '100%',
+                                padding: '0.875rem',
+                                background: isSubmittingPixel ? '#94a3b8' : 'linear-gradient(135deg, #1877f2 0%, #0c63d4 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '10px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: isSubmittingPixel ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isSubmittingPixel) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(24, 119, 242, 0.4)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}
+                        >
+                            {isSubmittingPixel ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    Saving Changes...
+                                </>
+                            ) : (
+                                <>
+                                    <span>💾</span>
+                                    Save Pixel Settings
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
-            </nav>
-            <form onSubmit={formik.handleSubmit} className={`product-form mx-4 w-100 ${styles.customForm}`}>
-                <h1 className={styles.formTitle}>UPI Add</h1>
-                <div className={`mb-3 ${styles.formGroup}`}>
-                    <label htmlFor="upi" className="form-label">UPI:</label>
-                    <input
-                        id="upi"
-                        name="upi"
-                        type="text"
-                        className={`form-control ${styles.formControl}`}
-                        onChange={(e) => {
-                            setProducts({ ...products, upi: e.target.value });
-                        }}
-                        defaultValue={products?.upi}
-                    />
-                </div>  <div className={`mb-3 ${styles.formGroup}`}>
-                    <label htmlFor="upi" className="form-label">UPI:</label>
-                    <input
-                        id="upi2"
-                        name="upi2"
-                        type="text"
-                        className={`form-control ${styles.formControl}`}
-                        onChange={(e) => {
-                            setProducts({ ...products, upi2: e.target.value });
-                        }}
-                        defaultValue={products?.upi2}
-                    />
-                </div>
-                <div className={`container mt-5 ${styles.paymentMethodContainer}`}>
-                    <h2 className={styles.paymentMethodTitle}>Select Payment Method</h2>
-
-                    <div className={`form-check form-switch d-flex align-items-center  justify-content-between ${styles.paymentMethodSwitch}`}>
-                        <input
-                            className="form-check-input mx-1"
-                            type="checkbox"
-                            id="googlePaySwitch"
-                            checked={products?.Gpay}
-                            onChange={(e) => {
-                                console.log(e.target.checked);
-                                setProducts({ ...products, Gpay: e.target.checked });
-                            }}
-                        />
-                        <label className="form-check-label" htmlFor="googlePaySwitch" style={{ fontSize: 14 }}><b>Google Pay</b></label>
-                    </div>
-
-                    <div className={`form-check form-switch d-flex align-items-center justify-content-between ${styles.paymentMethodSwitch}`}>
-                        <input
-                            className="form-check-input mx-1"
-                            type="checkbox"
-                            id="phonePaySwitch"
-                            checked={products?.Phonepe}
-                            onChange={(e) => {
-                                console.log(e.target.checked);
-                                setProducts({ ...products, Phonepe: e.target.checked });
-                            }}
-                        />
-                        <label className="form-check-label" htmlFor="phonePaySwitch" style={{ fontSize: 14 }}><b>PhonePe</b></label>
-                    </div>
-
-                    <div className={`form-check form-switch d-flex align-items-center  justify-content-between ${styles.paymentMethodSwitch}`}>
-                        <input
-                            className="form-check-input mx-1"
-                            type="checkbox"
-                            id="paytmSwitch"
-                            checked={products?.Paytm}
-                            onChange={(e) => {
-                                console.log(e.target.checked);
-                                setProducts({ ...products, Paytm: e.target.checked });
-                            }}
-                        />
-                        <label className="form-check-label" htmlFor="paytmSwitch" style={{ fontSize: 14 }}><b>Paytm</b></label>
-                    </div>
-
-                    <div className={`form-check form-switch d-flex align-items-center justify-content-between ${styles.paymentMethodSwitch}`}>
-                        <input
-                            className="form-check-input mx-1"
-                            type="checkbox"
-                            id="bhimUPIswitch"
-                            checked={products?.Bhim}
-                            onChange={(e) => {
-                                console.log(e.target.checked);
-                                setProducts({ ...products, Bhim: e.target.checked });
-                            }}
-                        />
-                        <label className="form-check-label" htmlFor="bhimUPIswitch" style={{ fontSize: 14 }}><b>BHIM UPI</b></label>
-                    </div>
-
-                    <div className={`form-check form-switch d-flex align-items-center  justify-content-between ${styles.paymentMethodSwitch}`}>
-                        <input
-                            className="form-check-input mx-1"
-                            type="checkbox"
-                            id="wPaySwitch"
-                            checked={products?.WPay}
-                            onChange={(e) => {
-                                console.log(e.target.checked);
-                                setProducts({ ...products, WPay: e.target.checked });
-                            }}
-                        />
-                        <label className="form-check-label" htmlFor="wPaySwitch" style={{ fontSize: 14 }}><b>W-Pay</b></label>
-                    </div>
-                </div>
-                <button type="submit" className={`btn btn-primary my-2 w-100 ${styles.submitButton}`}>Submit</button>
-            </form>
-
-            <form onSubmit={formik1.handleSubmit} className={`product-form mx-4 mt-5 w-100 ${styles.pixelForm}`}>
-                <h1 className={styles.formTitle}>Add Pixel</h1>
-                <div className={`mb-3 ${styles.formGroup}`}>
-                    <label htmlFor="pixelId" className="form-label">Pixel ID:</label>
-                    <textarea
-                        id="pixelId"
-                        name="pixelId"
-                        type="text"
-                        value={products1}
-                        className={`form-control ${styles.formControl}`}
-                        onChange={(e) => {
-                            setProducts1(e.target.value);
-                        }}
-                        rows={5}
-                    />
-                </div>
-                <button type="submit" className={`btn btn-primary my-2 w-100 ${styles.submitButton}`}>Submit</button>
-            </form>
-        </>
+            </div>
+        </div>
     );
 };
 

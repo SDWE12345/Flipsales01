@@ -1,45 +1,93 @@
 // pages/api/products/index.js
-import { connectToDatabase } from '../../../utils/mongodb';
-import Product from '../../../models/Product';
+import clientPromise from '../../../lib/mongodb';
+import { ObjectId } from 'mongodb';
 
-connectToDatabase();
 export default async function handler(req, res) {
+  try {
+    const client = await clientPromise;
+    const db = client.db('yourDbName');
+    const collection = db.collection('products');
 
-    const { method } = req;
+    if (req.method === 'GET') {
+      const products = await collection
+        .find({})
+        .sort({ slNumber: 1, disp_order: 1, createdAt: -1 })
+        .toArray();
 
-    switch (method) {
-        case 'GET':
-            try {
-                const products = await Product.find({});
-                res.status(200).json(products);
-            } catch (error) {
-                res.status(500).json({ message: 'Internal Server Error' });
-            }
-            break;
-        case 'POST':
-            try {
-                const { name, color, img1, img2, img3, img4, img5, size, storage, selling_price, mrp, features, disp_order } = req.body;
-                const newProduct = new Product({
-                    Title:name,
-                    color,
-                    size,
-                    storage,
-                    selling_price,
-                    mrp,
-                    features,
-                    images:img1, images1:img2, images2:img3, images3:img4, images4:img5,
-                    disp_order,
-                });
-
-                const savedProduct = await newProduct.save();
-                res.status(201).json({ status: 1, data: savedProduct });
-            } catch (error) {
-                res.status(500).json({ status: 0, message: 'Internal Server Error' });
-            }
-            break;
-
-        default:
-            res.status(405).json({ message: 'Method Not Allowed' });
-            break;
+      return res.status(200).json(products);
     }
+
+    if (req.method === 'POST') {
+      const { 
+        title,
+        description,
+        features,
+        mrp,
+        price,
+        selling_price,
+        color,
+        size,
+        storage,
+        image,
+        images,
+        extraImages,
+        slNumber,
+        disp_order
+      } = req.body;
+
+      // Validation
+      if (!title || !price || !mrp) {
+        return res.status(400).json({ 
+          status: 0, 
+          message: 'Title, price, and MRP are required' 
+        });
+      }
+
+      // Get next slNumber
+      const lastProduct = await collection
+        .find({})
+        .sort({ slNumber: -1 })
+        .limit(1)
+        .toArray();
+      
+      const newSlNumber = lastProduct.length > 0 ? (lastProduct[0].slNumber || 0) + 1 : 1;
+
+      const newProduct = {
+        title: title || '',
+        description: description || '',
+        features: features || '',
+        mrp: parseFloat(mrp) || 0,
+        price: parseFloat(price) || 0,
+        selling_price: parseFloat(selling_price) || parseFloat(price) || 0,
+        color: color || '',
+        size: size || '',
+        storage: storage || '',
+        image: image || '',
+        images: images || [],
+        extraImages: extraImages || [],
+        slNumber: parseInt(slNumber) || newSlNumber,
+        disp_order: parseInt(disp_order) || newSlNumber,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const result = await collection.insertOne(newProduct);
+
+      return res.status(201).json({ 
+        status: 1, 
+        message: 'Product added successfully',
+        productId: result.insertedId,
+        product: { ...newProduct, _id: result.insertedId }
+      });
+    }
+
+    return res.status(405).json({ message: 'Method not allowed' });
+  } catch (error) {
+    console.error('API Error:', error);
+    return res.status(500).json({ 
+      status: 0, 
+      message: 'Internal server error',
+      error: error.message 
+    });
+  }
 }

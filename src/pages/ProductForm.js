@@ -1,144 +1,485 @@
-// components/ProductForm.js
 import { useFormik } from 'formik';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import 'react-quill/dist/quill.snow.css'; import { useToasts } from 'react-toast-notifications';
-import styles from '../styles/ProductForm.module.css';
-
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import 'react-quill/dist/quill.snow.css';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 const ProductForm = () => {
-    const { addToast } = useToasts();
+    const router = useRouter();
+    const { id } = router.query;
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
 
     const formik = useFormik({
         initialValues: {
-            Title: '',
+            title: '',
+            description: '',
+            features: '',
+            mrp: '',
+            price: '',
             color: '',
             size: '',
             storage: '',
-            selling_price: '',
-            mrp: '',
-            features: '',
-            images: '',
-            images1: '',
-            images2: '',
-            images3: '',
-            images4: '',
-            disp_order: '',
+            image: '',
+            images: ['', '', '', '', ''],
+            extraImages: ['', ''],
+            slNumber: '',
+            disp_order: ''
+        },
+        validate: (values) => {
+            const errors = {};
+            if (!values.title.trim()) errors.title = 'Title is required';
+            if (!values.price) errors.price = 'Price is required';
+            if (!values.mrp) errors.mrp = 'MRP is required';
+            if (values.price && values.mrp && parseFloat(values.price) > parseFloat(values.mrp)) {
+                errors.price = 'Selling price cannot be greater than MRP';
+            }
+            if (!values.image && values.images.every(img => !img)) {
+                errors.image = 'At least one image is required';
+            }
+            return errors;
         },
         onSubmit: async (values) => {
+            setIsSubmitting(true);
             try {
-                let headersList = {
-                    "Accept": "*/*",
-                    "User-Agent": "Thunder Client (https://www.thunderclient.com)",
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                // Prepare data in correct format for API
+                const productData = {
+                    title: values.title,
+                    description: values.description,
+                    features: values.features,
+                    mrp: values.mrp,
+                    price: values.price,
+                    selling_price: values.price, // Map price to selling_price
+                    color: values.color,
+                    size: values.size,
+                    storage: values.storage,
+                    image: values.image,
+                    images: values.images.filter(img => img && img.trim() !== ''),
+                    extraImages: values.extraImages.filter(img => img && img.trim() !== ''),
+                    slNumber: values.slNumber || 0,
+                    disp_order: values.disp_order || values.slNumber || 0
                 };
-                // let bodyContent = JSON.stringify(values);
-                let bodyContent = JSON.stringify({
-                    "Title": values.Title,
-                    "color": values.color,
-                    "size": values.size,
-                    "storage": values.storage,
-                    "selling_price": values.selling_price,
-                    "mrp": values.mrp,
-                    "features": values.features,
-                    "images": values.images,
-                    "images1": values.images1,
-                    "images2": values.images2,
-                    "images3": values.images3,
-                    "images4": values.images4,
-                    "disp_order": values.disp_order,
+
+                const url = isEditMode ? `/api/products/${id}` : '/api/products';
+                const method = isEditMode ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(productData),
                 });
-                let response = await fetch("/api/products", {
-                    method: "POST",
-                    body: bodyContent,
-                    headers: headersList
-                });
-                let data = await response.text();
-                if (JSON.parse(data)['status'] === 1) {
-                    addToast("Product submitted successfully", { appearance: 'success' });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    toast.success(
+                        isEditMode ? 'Product updated successfully!' : 'Product added successfully!',
+                        {
+                            position: "top-right",
+                            autoClose: 3000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                        }
+                    );
+
+                    // Redirect after success
+                    setTimeout(() => {
+                        router.push('/Producttable');
+                    }, 2000);
                 } else {
-                    addToast('Error submitting product', { appearance: 'error' });
+                    toast.error(data.message || 'Error submitting product', {
+                        position: "top-right",
+                        autoClose: 5000,
+                    });
                 }
             } catch (error) {
-                addToast('Error submitting product', { appearance: 'error' });
+                console.error('Error:', error);
+                toast.error('Network error. Please try again.', {
+                    position: "top-right",
+                    autoClose: 5000,
+                });
+            } finally {
+                setIsSubmitting(false);
             }
-
         },
     });
-    return (
 
+    // Load product data if editing
+    useEffect(() => {
+        if (id) {
+            setIsEditMode(true);
+            loadProductData();
+        }
+    }, [id]);
+
+    const loadProductData = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/products/${id}`);
+            if (!response.ok) throw new Error('Failed to fetch product');
+            
+            const product = await response.json();
+            
+            // Map API data to form fields
+            formik.setValues({
+                title: product.title || product.Title || '',
+                description: product.description || '',
+                features: product.features || '',
+                mrp: product.mrp || '',
+                price: product.price || product.selling_price || '',
+                color: product.color || '',
+                size: product.size || '',
+                storage: product.storage || '',
+                image: product.image || '',
+                images: product.images || ['', '', '', '', ''],
+                extraImages: product.extraImages || ['', ''],
+                slNumber: product.slNumber || '',
+                disp_order: product.disp_order || product.slNumber || ''
+            });
+            
+        } catch (error) {
+            console.error('Error loading product:', error);
+            toast.error('Error loading product data', {
+                position: "top-right",
+                autoClose: 5000,
+            });
+            router.push('/Producttable');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Handle image URL input changes
+    const handleImageChange = (index, value) => {
+        const newImages = [...formik.values.images];
+        newImages[index] = value;
+        formik.setFieldValue('images', newImages);
+    };
+
+    // Handle extra image changes
+    const handleExtraImageChange = (index, value) => {
+        const newExtraImages = [...formik.values.extraImages];
+        newExtraImages[index] = value;
+        formik.setFieldValue('extraImages', newExtraImages);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="loading-overlay">
+                <div className="loading-content">
+                    <div className="loading-spinner"></div>
+                    <div className="loading-text">Loading product data...</div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
         <>
-            <nav className={`navbar navbar-expand-lg navbar-light bg-light px-5 ${styles.customNavbar}`}>
-                <a className="navbar-brand" href="#">Admin</a>
-                <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-                    <span className="navbar-toggler-icon"></span>
-                </button>
-                <div className="navbar-nav">
-                    <Link className="nav-item nav-link" href="/Producttable">Product</Link>
-                    <Link className="nav-item nav-link" href="/settings">Setting</Link>
+            <ToastContainer />
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+                {/* Navigation */}
+                <nav className="admin-nav">
+                    <div className="nav-container">
+                        <div className="nav-content">
+                            <div className="brand">Admin Dashboard</div>
+                            <div className="nav-links">
+                                <Link href="/Producttable" className="nav-link">
+                                    Products
+                                </Link>
+                                <Link href="/settings" className="nav-link">
+                                    Settings
+                                </Link>
+                                {isEditMode && (
+                                    <Link href="/Producttable">
+                                        <button className="back-button">
+                                            ← Back
+                                        </button>
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                {/* Main Content */}
+                <div className="main-container">
+                    <div className="page-header">
+                        <h1 className="page-title">
+                            {isEditMode ? '✏️ Edit Product' : '➕ Add New Product'}
+                        </h1>
+                        <p className="page-subtitle">
+                            {isEditMode ? 'Update the product details below' : 'Fill in all the required product information'}
+                        </p>
+                    </div>
+
+                    <div className="form-container">
+                        <form onSubmit={formik.handleSubmit}>
+                            {/* Basic Information */}
+                            <section className="form-section">
+                                <div className="section-header">
+                                    <span className="section-icon">📋</span>
+                                    <h2 className="section-title">Basic Information</h2>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label required">Product Title</label>
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        value={formik.values.title}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        placeholder="Enter product title"
+                                        className={`form-input ${formik.errors.title ? 'error' : ''}`}
+                                    />
+                                    {formik.errors.title && (
+                                        <div className="error-message">{formik.errors.title}</div>
+                                    )}
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Description</label>
+                                        <textarea
+                                            name="description"
+                                            value={formik.values.description}
+                                            onChange={formik.handleChange}
+                                            placeholder="Enter product description"
+                                            rows="3"
+                                            className="form-input form-textarea"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Features</label>
+                                        <textarea
+                                            name="features"
+                                            value={formik.values.features}
+                                            onChange={formik.handleChange}
+                                            placeholder="Enter product features (one per line or HTML)"
+                                            rows="3"
+                                            className="form-input form-textarea"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Color</label>
+                                        <input
+                                            type="text"
+                                            name="color"
+                                            value={formik.values.color}
+                                            onChange={formik.handleChange}
+                                            placeholder="e.g., Silver, Black"
+                                            className="form-input"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Size</label>
+                                        <input
+                                            type="text"
+                                            name="size"
+                                            value={formik.values.size}
+                                            onChange={formik.handleChange}
+                                            placeholder="e.g., 1.5 Litres"
+                                            className="form-input"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Storage / Capacity</label>
+                                        <input
+                                            type="text"
+                                            name="storage"
+                                            value={formik.values.storage}
+                                            onChange={formik.handleChange}
+                                            placeholder="e.g., 350 ml"
+                                            className="form-input"
+                                        />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Pricing */}
+                            <section className="form-section">
+                                <div className="section-header">
+                                    <span className="section-icon">💰</span>
+                                    <h2 className="section-title">Pricing</h2>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label required">MRP (₹)</label>
+                                        <input
+                                            type="number"
+                                            name="mrp"
+                                            value={formik.values.mrp}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            placeholder="e.g., 2154"
+                                            className={`form-input ${formik.errors.mrp ? 'error' : ''}`}
+                                        />
+                                        {formik.errors.mrp && (
+                                            <div className="error-message">{formik.errors.mrp}</div>
+                                        )}
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label required">Selling Price (₹)</label>
+                                        <input
+                                            type="number"
+                                            name="price"
+                                            value={formik.values.price}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            placeholder="e.g., 299"
+                                            className={`form-input ${formik.errors.price ? 'error' : ''}`}
+                                        />
+                                        {formik.errors.price && (
+                                            <div className="error-message">{formik.errors.price}</div>
+                                        )}
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Display Order</label>
+                                        <input
+                                            type="number"
+                                            name="slNumber"
+                                            value={formik.values.slNumber}
+                                            onChange={formik.handleChange}
+                                            placeholder="e.g., 1"
+                                            className="form-input"
+                                        />
+                                    </div>
+                                </div>
+
+                                {formik.values.mrp && formik.values.price && (
+                                    <div className="price-display">
+                                        <span className="discount-badge">
+                                            💡 {Math.round(((formik.values.mrp - formik.values.price) / formik.values.mrp) * 100)}% OFF
+                                        </span>
+                                        <span className="savings-display">
+                                            Save ₹{formik.values.mrp - formik.values.price}
+                                        </span>
+                                    </div>
+                                )}
+                            </section>
+
+                            {/* Images */}
+                            <section className="form-section">
+                                <div className="section-header">
+                                    <span className="section-icon">🖼️</span>
+                                    <h2 className="section-title">Product Images</h2>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label required">Main Image URL</label>
+                                    <input
+                                        type="text"
+                                        name="image"
+                                        value={formik.values.image}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        placeholder="/images/product-8-main.jpeg"
+                                        className={`form-input ${formik.errors.image ? 'error' : ''}`}
+                                    />
+                                    {formik.errors.image && (
+                                        <div className="error-message">{formik.errors.image}</div>
+                                    )}
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Additional Images</label>
+                                    <div className="image-grid">
+                                        {formik.values.images.map((img, index) => (
+                                            <div key={index} className="image-grid-item">
+                                                <input
+                                                    type="text"
+                                                    value={img}
+                                                    onChange={(e) => handleImageChange(index, e.target.value)}
+                                                    placeholder={`Image ${index + 1}`}
+                                                    className="form-input mb-2"
+                                                />
+                                                {img && (
+                                                    <img
+                                                        src={img}
+                                                        alt={`Preview ${index + 1}`}
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                        }}
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Extra Images (WebP)</label>
+                                    <div className="image-grid">
+                                        {formik.values.extraImages.map((img, index) => (
+                                            <div key={`extra-${index}`} className="image-grid-item">
+                                                <input
+                                                    type="text"
+                                                    value={img}
+                                                    onChange={(e) => handleExtraImageChange(index, e.target.value)}
+                                                    placeholder={`Extra ${index + 1}`}
+                                                    className="form-input mb-2"
+                                                />
+                                                {img && (
+                                                    <img
+                                                        src={img}
+                                                        alt={`Extra preview ${index + 1}`}
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                        }}
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Submit Button */}
+                            <div className="form-group">
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="submit-button"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <svg className="spinner" width="20" height="20" viewBox="0 0 24 24">
+                                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                            </svg>
+                                            {isEditMode ? 'Updating Product...' : 'Adding Product...'}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {isEditMode ? '💾 Update Product' : '✅ Add Product'}
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+
+                        {/* JSON Preview */}
+                        <details className="json-preview">
+                            <summary>JSON Preview (Debug)</summary>
+                            <pre>{JSON.stringify(formik.values, null, 2)}</pre>
+                        </details>
+                    </div>
                 </div>
-            </nav>
-            <form onSubmit={formik.handleSubmit} className={`product-form mx-4 ${styles.customForm}`}>
-                <h1 className={styles.formTitle}>Product Add</h1>
-                <div className={`form-group ${styles.formGroup}`}>
-                    <label htmlFor="Title" className="form-label">Title:</label>
-                    <input
-                        id="Title"
-                        className={`form-control ${styles.formControl}`}
-                        name="Title"
-                        type="text"
-                        onChange={formik.handleChange}
-                        value={formik.values.Title}
-                    />
-                </div>
-                <div className={`form-group ${styles.formGroup}`}>
-                    <label htmlFor="color" className="form-label">Color:</label>
-                    <input
-                        id="color"
-                        name="color"
-                        className={`form-control ${styles.formControl}`}
-                        type="text"
-                        onChange={formik.handleChange}
-                        value={formik.values.color}
-                    />
-                </div>
-                <div className={`form-group ${styles.formGroup}`}>
-                    <label htmlFor="size" className="form-label">Size:</label>
-                    <input
-                        id="size"
-                        name="size"
-                        className={`form-control ${styles.formControl}`}
-                        type="text"
-                        onChange={formik.handleChange}
-                        value={formik.values.size}
-                    />
-                </div>
-                <div className={`form-group ${styles.formGroup}`}>
-                    <label htmlFor="storage" className="form-label">Storage:</label>
-                    <input
-                        id="storage"
-                        name="storage"
-                        className={`form-control ${styles.formControl}`}
-                        type="text"
-                        onChange={formik.handleChange}
-                        value={formik.values.storage}
-                    />
-                </div>
-                <div className={`form-group ${styles.formGroup}`}>
-                    <label htmlFor="features" className="form-label">Features:</label>
-                    <ReactQuill
-                        id="features"
-                        className={`form-control ${styles.formControl}`}
-                        name="features"
-                        value={formik.values.features}
-                        onChange={(value) => formik.setFieldValue('features', value)}
-                    />
-                </div>
-                <button type="submit" className={`btn btn-primary my-2 w-100 ${styles.submitButton}`}>Submit</button>
-            </form>
+            </div>
         </>
     );
 };
