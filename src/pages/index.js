@@ -52,7 +52,7 @@ export default function Home() {
       const data = await response.json();
 
       if (data.pixelId) {
-        sessionStorage.setItem('pixelId', data.pixelId['FacebookPixel']);
+        localStorage.setItem('pixelId', data.pixelId['FacebookPixel']);
         setPixelId(data.pixelId);
       }
 
@@ -376,4 +376,5 @@ export default function Home() {
       <footer id="seofooter" />
     </div>
   );
+
 }
