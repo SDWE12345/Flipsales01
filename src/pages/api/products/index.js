@@ -7,14 +7,19 @@ export default async function handler(req, res) {
     const client = await clientPromise;
     const db = client.db('yourDbName');
     const collection = db.collection('products');
+    const pixelCollection = db.collection('facebookpixels');
 
-    if (req.method === 'GET') {
+      
+      if (req.method === 'GET') {
+      const [ pixelData] = await Promise.all([
+        pixelCollection.findOne({}, { sort: { _id: -1 } })
+      ]);
       const products = await collection
         .find({})
         .sort({ slNumber: 1, disp_order: 1, createdAt: -1 })
         .toArray();
 
-      return res.status(200).json(products);
+      return res.status(200).json({products:products,pixelId: pixelData || null});
     }
 
     if (req.method === 'POST') {

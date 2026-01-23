@@ -9,7 +9,7 @@ import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { initializeTracking, trackPageView } from '@/utils/tracking';
 
-const META_PIXEL_ID = "1782903419326904";
+const META_PIXEL_ID =sessionStorage.getItem('pixelId') || "000000000000000";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-XXXXXXXXXX";
 
 function MyApp({ Component, pageProps }) {

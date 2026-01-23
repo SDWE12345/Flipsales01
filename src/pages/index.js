@@ -36,7 +36,7 @@ export default function Home() {
       setError(null);
 
       const token = sessionStorage.getItem('token');
-      const response = await fetch('/api/upichange', {
+      const response = await fetch('/api/products', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -51,11 +51,8 @@ export default function Home() {
 
       const data = await response.json();
 
-      if (data.upi?.upi) {
-        sessionStorage.setItem('upi', data.upi.upi);
-      }
-
       if (data.pixelId) {
+        sessionStorage.setItem('pixelId', data.pixelId['FacebookPixel']);
         setPixelId(data.pixelId);
       }
 
