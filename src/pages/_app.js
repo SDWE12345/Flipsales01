@@ -108,13 +108,15 @@ function MyApp({ Component, pageProps }) {
         `}
       </Script>
 
-      <ToastProvider>=
-          <Component {...pageProps} />
+      <ToastProvider>
+        <Layout>
+          <Component {...pageProps} /> </Layout>
       </ToastProvider>
     </>
   );
 }
 
 export default MyApp;
+
 
 
