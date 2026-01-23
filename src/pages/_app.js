@@ -1,5 +1,5 @@
 // pages/_app.js
-import Layout from '@/components/Layout'; // Fixed typo: componets -> components
+import Layout from '../componets/Layout'; // Fixed typo: componets -> components
 import '../styles/Home.module.css';
 import '../styles/globals.css';
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -7,7 +7,7 @@ import { ToastProvider } from 'react-toast-notifications';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
-import { initializeTracking, trackPageView } from '@/utils/tracking';
+import { initializeTracking, trackPageView } from '../utils/tracking';
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-XXXXXXXXXX";
 
