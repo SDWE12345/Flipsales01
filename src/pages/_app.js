@@ -1,19 +1,29 @@
 // pages/_app.js
-import Layout from '@/componets/Layout';
+import Layout from '@/components/Layout'; // Fixed typo: componets -> components
 import '../styles/Home.module.css';
 import '../styles/globals.css';
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ToastProvider } from 'react-toast-notifications';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { initializeTracking, trackPageView } from '@/utils/tracking';
 
-const META_PIXEL_ID =sessionStorage.getItem('pixelId') || "000000000000000";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-XXXXXXXXXX";
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
+  const [metaPixelId, setMetaPixelId] = useState("000000000000000");
+
+  // Get pixel ID from sessionStorage only on client-side
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage) {
+      const pixelId = sessionStorage.getItem('pixelId');
+      if (pixelId) {
+        setMetaPixelId(pixelId);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Wait for scripts to load before initializing
@@ -63,7 +73,7 @@ function MyApp({ Component, pageProps }) {
           }(window, document,'script',
           'https://connect.facebook.net/en_US/fbevents.js');
           
-          fbq('init', '${META_PIXEL_ID}');
+          fbq('init', '${metaPixelId}');
           fbq('track', 'PageView');
         `}
       </Script>
@@ -74,7 +84,7 @@ function MyApp({ Component, pageProps }) {
           height="1"
           width="1"
           style={{ display: 'none' }}
-          src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+          src={`https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1`}
           alt=""
         />
       </noscript>
