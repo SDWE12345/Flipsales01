@@ -18,7 +18,7 @@ function MyApp({ Component, pageProps }) {
   // Get pixel ID from sessionStorage only on client-side
   useEffect(() => {
     if (typeof window !== 'undefined' && sessionStorage) {
-      const pixelId = sessionStorage.getItem('pixelId');
+      const pixelId = localStorage.getItem('pixelId');
       if (pixelId) {
         setMetaPixelId(pixelId);
       }
@@ -116,4 +116,5 @@ function MyApp({ Component, pageProps }) {
 }
 
 export default MyApp;
+
 
