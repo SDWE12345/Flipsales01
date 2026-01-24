@@ -59,9 +59,48 @@ const Payments = () => {
     };
 
     const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
-    const amount = Number(product.selling_price || product.price) || 0;
-    const mrp = Number(product.mrp) || 0;
+    const seconds = time % 60;// CORRECT VERSION - Calculate totals for all products in cart
+
+const calculateTotals = () => {
+    let totalMrp = 0;
+    let totalSellingPrice = 0;
+    let totalItems = 0;
+
+    if (typeof window !== 'undefined' && localStorage) {
+        try {
+            const cartData = JSON.parse(localStorage.getItem("cart") || "[]");
+            
+            cartData.forEach(item => {
+                const quantity = Number(item.quantity) || 1;
+                const mrp = Number(item.mrp) || 0;
+                const sellingPrice = Number(item.selling_price || item.price) || 0;
+                
+                totalMrp += mrp * quantity;
+                totalSellingPrice += sellingPrice * quantity;
+                totalItems += quantity;
+            });
+        } catch (error) {
+            console.error("Error calculating totals:", error);
+        }
+    }
+
+    return {
+        totalMrp,
+        totalSellingPrice,
+        totalDiscount: totalMrp - totalSellingPrice,
+        totalItems
+    };
+};
+
+// Usage
+const { totalMrp, totalSellingPrice, totalDiscount, totalItems } = calculateTotals();
+const amount = totalSellingPrice;
+const mrp = totalMrp;
+
+console.log("Total MRP:", mrp);
+console.log("Total Selling Price:", amount);
+console.log("Total Discount:", totalDiscount);
+console.log("Total Items:", totalItems);
 
     const getPaymentUrl = (activeTab) => {
         const upiId = upiConfig.upi || "";
