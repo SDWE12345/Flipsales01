@@ -281,7 +281,7 @@ console.log("Total Items:", totalItems);
                         style={{
                             width: '100%',
                             padding: '12px',
-                            background: 'linear-gradient(135deg, #2874f0 0%, #1e5bc6 100%)',
+                            background: 'linear-gradient(135deg, #0349b8 0%, #1e5bc6 100%)',
                             color: '#fff',
                             border: 'none',
                             borderRadius: '10px',
@@ -300,7 +300,7 @@ console.log("Total Items:", totalItems);
                         style={{
                             background: 'none',
                             border: 'none',
-                            color: '#2874f0',
+                            color: '#0349b8',
                             fontSize: '12px',
                             fontWeight: '600',
                             cursor: 'pointer',
@@ -318,7 +318,7 @@ console.log("Total Items:", totalItems);
         <div style={{ background: '#f5f5f5', minHeight: '100vh', paddingBottom: '80px' }}>
             {/* Header */}
             <header style={{
-                background: 'linear-gradient(135deg, #2874f0 0%, #1e5bc6 100%)',
+                background: 'linear-gradient(135deg, #0349b8 0%, #1e5bc6 100%)',
                 padding: '12px 16px',
                 boxShadow: '0 2px 8px rgba(40,116,240,0.15)',
                 position: 'sticky',
@@ -393,7 +393,7 @@ console.log("Total Items:", totalItems);
                         <div style={{
                             height: '100%',
                             width: '100%',
-                            background: 'linear-gradient(90deg, #2874f0, #5b8def)',
+                            background: 'linear-gradient(90deg, #0349b8, #5b8def)',
                             transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                             borderRadius: '2px'
                         }} />
@@ -406,7 +406,7 @@ console.log("Total Items:", totalItems);
                                 width: '30px',
                                 height: '30px',
                                 borderRadius: '50%',
-                                background: idx === 2 ? 'linear-gradient(135deg, #2874f0 0%, #1e5bc6 100%)' : '#388e3c',
+                                background: idx === 2 ? 'linear-gradient(135deg, #0349b8 0%, #1e5bc6 100%)' : '#388e3c',
                                 color: '#fff',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -421,7 +421,7 @@ console.log("Total Items:", totalItems);
                             </div>
                             <div style={{
                                 fontSize: '11px',
-                                color: idx === 2 ? '#2874f0' : '#388e3c',
+                                color: idx === 2 ? '#0349b8' : '#388e3c',
                                 fontWeight: '600',
                                 lineHeight: '1.3',
                                 whiteSpace: 'pre-line'
@@ -486,7 +486,7 @@ console.log("Total Items:", totalItems);
                         <div style={{
                             width: '42px',
                             height: '42px',
-                            background: 'linear-gradient(135deg, #2874f0 0%, #5b8def 100%)',
+                            background: 'linear-gradient(135deg, #0349b8 0%, #5b8def 100%)',
                             borderRadius: '12px',
                             display: 'flex',
                             alignItems: 'center',
@@ -513,7 +513,7 @@ console.log("Total Items:", totalItems);
                             </div>
                         </div>
                         <div style={{
-                            color: '#2874f0',
+                            color: '#0349b8',
                             fontSize: '18px'
                         }}>
                             →
@@ -546,7 +546,7 @@ console.log("Total Items:", totalItems);
                             style={{
                                 padding: '12px',
                                 borderRadius: '10px',
-                                border: activeTab === method.id ? '2px solid #2874f0' : '2px solid #f0f0f0',
+                                border: activeTab === method.id ? '2px solid #0349b8' : '2px solid #f0f0f0',
                                 marginBottom: '8px',
                                 cursor: 'pointer',
                                 transition: 'all 0.3s',
@@ -557,7 +557,7 @@ console.log("Total Items:", totalItems);
                             }}
                             onMouseEnter={(e) => {
                                 if (activeTab !== method.id) {
-                                    e.currentTarget.style.borderColor = '#2874f0';
+                                    e.currentTarget.style.borderColor = '#0349b8';
                                     e.currentTarget.style.background = '#fafafa';
                                 }
                             }}
@@ -593,7 +593,7 @@ console.log("Total Items:", totalItems);
                                 width: '18px',
                                 height: '18px',
                                 borderRadius: '50%',
-                                border: activeTab === method.id ? '6px solid #2874f0' : '2px solid #ccc',
+                                border: activeTab === method.id ? '6px solid #0349b8' : '2px solid #ccc',
                                 transition: 'all 0.3s'
                             }} />
                         </div>
@@ -667,7 +667,7 @@ console.log("Total Items:", totalItems);
                         }}>
                             <div style={{
                                 fontSize: '20px',
-                                color: '#2874f0',
+                                color: '#0349b8',
                                 marginBottom: '6px'
                             }}>
                                 {badge.icon}

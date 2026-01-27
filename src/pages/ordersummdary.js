@@ -103,7 +103,7 @@ const Ordersummary = () => {
         <div style={{ background: '#f5f5f5', minHeight: '100vh', paddingBottom: '70px' }}>
             {/* Header */}
             <header style={{ 
-                background: 'linear-gradient(135deg, #2874f0 0%, #1e5bc6 100%)', 
+                background: 'linear-gradient(135deg, #0349b8 0%, #1e5bc6 100%)', 
                 padding: '12px 16px',
                 boxShadow: '0 2px 8px rgba(40,116,240,0.15)',
                 position: 'sticky',
@@ -173,7 +173,7 @@ const Ordersummary = () => {
                         <div style={{
                             height: '100%',
                             width: '50%',
-                            background: 'linear-gradient(90deg, #2874f0, #5b8def)',
+                            background: 'linear-gradient(90deg, #0349b8, #5b8def)',
                             transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                             borderRadius: '2px'
                         }} />
@@ -207,7 +207,7 @@ const Ordersummary = () => {
                             width: '30px',
                             height: '30px',
                             borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #2874f0 0%, #1e5bc6 100%)',
+                            background: 'linear-gradient(135deg, #0349b8 0%, #1e5bc6 100%)',
                             color: '#fff',
                             display: 'flex',
                             alignItems: 'center',
@@ -220,7 +220,7 @@ const Ordersummary = () => {
                         }}>
                             2
                         </div>
-                        <div style={{ fontSize: '11px', color: '#2874f0', fontWeight: '600', lineHeight: '1.3' }}>
+                        <div style={{ fontSize: '11px', color: '#0349b8', fontWeight: '600', lineHeight: '1.3' }}>
                             Order Summary
                         </div>
                     </div>
@@ -275,7 +275,7 @@ const Ordersummary = () => {
                             alignItems: 'center',
                             gap: '6px'
                         }}>
-                            <FaMapMarkerAlt style={{ color: '#2874f0', fontSize: '14px' }} />
+                            <FaMapMarkerAlt style={{ color: '#0349b8', fontSize: '14px' }} />
                             Delivered to:
                         </h2>
                         <button
@@ -283,7 +283,7 @@ const Ordersummary = () => {
                             style={{
                                 background: 'none',
                                 border: 'none',
-                                color: '#2874f0',
+                                color: '#0349b8',
                                 fontSize: '12px',
                                 fontWeight: '600',
                                 cursor: 'pointer',
@@ -301,7 +301,7 @@ const Ordersummary = () => {
                         background: '#f8f9fa',
                         padding: '12px',
                         borderRadius: '8px',
-                        borderLeft: '3px solid #2874f0'
+                        borderLeft: '3px solid #0349b8'
                     }}>
                         <div style={{ marginBottom: '6px' }}>
                             <span style={{ fontWeight: '600', color: '#212121', fontSize: '13px' }}>
@@ -384,7 +384,7 @@ const Ordersummary = () => {
                                             {product.Title || product.title || 'Product Name'}
                                         </h3>
                                         <img
-                                            src="https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/fa_62673a.png"
+                                            src="/uploads/Gemini_Generated_Image_f8x8eof8x8eof8x8.png"
                                             alt="Assured"
                                             style={{ height: '18px', marginBottom: '6px' }}
                                         />
@@ -415,7 +415,7 @@ const Ordersummary = () => {
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        color: quantity === 1 ? '#ccc' : '#2874f0',
+                                                        color: quantity === 1 ? '#ccc' : '#0349b8',
                                                         fontSize: '16px'
                                                     }}
                                                     disabled={quantity === 1}
@@ -444,7 +444,7 @@ const Ordersummary = () => {
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        color: '#2874f0',
+                                                        color: '#0349b8',
                                                         fontSize: '16px'
                                                     }}
                                                 >

@@ -155,7 +155,7 @@ export default function extraImagesProductDetails() {
           position: 'sticky',
           top: 0,
           zIndex: 1000,
-          background: '#2874f0',
+          background: '#0349b8',
           padding: '10px 14px',
           boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
         }}
@@ -242,7 +242,7 @@ export default function extraImagesProductDetails() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   padding: '0 4px',
-                  boxShadow: '0 0 0 2px #2874f0'
+                  boxShadow: '0 0 0 2px #0349b8'
                 }}
               >
                 {getCartCount()}
@@ -391,7 +391,7 @@ export default function extraImagesProductDetails() {
                     width: selectedImageIndex === idx ? '24px' : '8px',
                     height: '8px',
                     borderRadius: '4px',
-                    background: selectedImageIndex === idx ? '#2874f0' : 'rgba(255,255,255,0.6)',
+                    background: selectedImageIndex === idx ? '#0349b8' : 'rgba(255,255,255,0.6)',
                     cursor: 'pointer',
                     transition: 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
                     boxShadow: selectedImageIndex === idx ? '0 0 8px rgba(40, 116, 240, 0.6)' : 'none'
@@ -429,7 +429,7 @@ export default function extraImagesProductDetails() {
                     width: '60px',
                     height: '60px',
                     objectFit: 'contain',
-                    border: selectedImageIndex === idx ? '2px solid #2874f0' : '1px solid #ddd',
+                    border: selectedImageIndex === idx ? '2px solid #0349b8' : '1px solid #ddd',
                     borderRadius: '8px',
                     padding: '4px',
                     transition: 'all 0.3s ease',
@@ -478,9 +478,9 @@ export default function extraImagesProductDetails() {
         </div>
 
         <img
-          src="https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/fa_62673a.png"
+          src="/uploads/Gemini_Generated_Image_f8x8eof8x8eof8x8.png"
           alt="Assured"
-          style={{ height: '21px', marginBottom: '16px' }}
+          style={{ height: '24px', marginBottom: '16px' }}
         />
       </div>
 

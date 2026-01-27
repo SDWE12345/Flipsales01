@@ -122,7 +122,7 @@ export default function CartPage() {
     <div style={{ background: '#f1f2f4', minHeight: '100vh', paddingBottom: '100px' }}>
       {/* Header */}
       <header style={{ 
-        background: '#2874f0', 
+        background: '#0349b8', 
         padding: '12px 16px', 
         position: 'sticky', 
         top: 0, 
@@ -159,7 +159,7 @@ export default function CartPage() {
           <Link href="/" style={{ textDecoration: 'none' }}>
             <button style={{
               padding: '14px 40px',
-              background: '#2874f0',
+              background: '#0349b8',
               color: '#fff',
               border: 'none',
               borderRadius: '4px',
@@ -169,7 +169,7 @@ export default function CartPage() {
               transition: 'background 0.3s'
             }}
             onMouseEnter={(e) => e.target.style.background = '#1e5bc6'}
-            onMouseLeave={(e) => e.target.style.background = '#2874f0'}>
+            onMouseLeave={(e) => e.target.style.background = '#0349b8'}>
               Shop Now
             </button>
           </Link>

@@ -128,7 +128,7 @@ useEffect(() => {
         <div style={{ background: '#f5f5f5', minHeight: '100vh' }}>
             {/* Header */}
             <header style={{ 
-                background: 'linear-gradient(135deg, #2874f0 0%, #1e5bc6 100%)', 
+                background: 'linear-gradient(135deg, #0349b8 0%, #1e5bc6 100%)', 
                 padding: '12px 16px',
                 boxShadow: '0 2px 8px rgba(40,116,240,0.15)',
                 position: 'sticky',
@@ -204,7 +204,7 @@ useEffect(() => {
                         <div style={{
                             height: '100%',
                             width: '0%',
-                            background: 'linear-gradient(90deg, #2874f0, #5b8def)',
+                            background: 'linear-gradient(90deg, #0349b8, #5b8def)',
                             transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                             borderRadius: '2px'
                         }} />
@@ -221,7 +221,7 @@ useEffect(() => {
                             width: '30px',
                             height: '30px',
                             borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #2874f0 0%, #1e5bc6 100%)',
+                            background: 'linear-gradient(135deg, #0349b8 0%, #1e5bc6 100%)',
                             color: '#fff',
                             display: 'flex',
                             alignItems: 'center',
@@ -236,7 +236,7 @@ useEffect(() => {
                         </div>
                         <div style={{ 
                             fontSize: '11px', 
-                            color: '#2874f0', 
+                            color: '#0349b8', 
                             fontWeight: '600',
                             lineHeight: '1.3'
                         }}>
@@ -337,7 +337,7 @@ useEffect(() => {
                             paddingBottom: '10px',
                             borderBottom: '2px solid #f5f5f5'
                         }}>
-                            <FaUser style={{ color: '#2874f0', fontSize: '14px' }} />
+                            <FaUser style={{ color: '#0349b8', fontSize: '14px' }} />
                             <h2 style={{ 
                                 fontSize: '14px', 
                                 fontWeight: '600',
@@ -380,7 +380,7 @@ useEffect(() => {
                                         fontWeight: '500'
                                     }}
                                     onFocus={(e) => {
-                                        e.target.style.border = '2px solid #2874f0';
+                                        e.target.style.border = '2px solid #0349b8';
                                         e.target.style.background = '#fff';
                                     }}
                                     onBlur={(e) => {
@@ -448,7 +448,7 @@ useEffect(() => {
                                         fontWeight: '500'
                                     }}
                                     onFocus={(e) => {
-                                        e.target.style.border = '2px solid #2874f0';
+                                        e.target.style.border = '2px solid #0349b8';
                                         e.target.style.background = '#fff';
                                     }}
                                     onBlur={(e) => {
@@ -500,7 +500,7 @@ useEffect(() => {
                             paddingBottom: '10px',
                             borderBottom: '2px solid #f5f5f5'
                         }}>
-                            <FaMapMarkerAlt style={{ color: '#2874f0', fontSize: '14px' }} />
+                            <FaMapMarkerAlt style={{ color: '#0349b8', fontSize: '14px' }} />
                             <h2 style={{ 
                                 fontSize: '14px', 
                                 fontWeight: '600',
@@ -544,7 +544,7 @@ useEffect(() => {
                                         fontWeight: '500'
                                     }}
                                     onFocus={(e) => {
-                                        e.target.style.border = '2px solid #2874f0';
+                                        e.target.style.border = '2px solid #0349b8';
                                         e.target.style.background = '#fff';
                                     }}
                                     onBlur={(e) => {
@@ -617,7 +617,7 @@ useEffect(() => {
                                             fontWeight: '500'
                                         }}
                                         onFocus={(e) => {
-                                            e.target.style.border = '2px solid #2874f0';
+                                            e.target.style.border = '2px solid #0349b8';
                                             e.target.style.background = '#fff';
                                         }}
                                         onBlur={(e) => {
@@ -668,7 +668,7 @@ useEffect(() => {
                                         fontWeight: '500'
                                     }}
                                     onFocus={(e) => {
-                                        e.target.style.border = '2px solid #2874f0';
+                                        e.target.style.border = '2px solid #0349b8';
                                         e.target.style.background = '#fff';
                                     }}
                                     onBlur={(e) => {
@@ -759,7 +759,7 @@ useEffect(() => {
                                     fontWeight: '500'
                                 }}
                                 onFocus={(e) => {
-                                    e.target.style.border = '2px solid #2874f0';
+                                    e.target.style.border = '2px solid #0349b8';
                                     e.target.style.background = '#fff';
                                 }}
                                 onBlur={(e) => {

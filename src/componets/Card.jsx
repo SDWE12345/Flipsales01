@@ -279,49 +279,16 @@ export default function Card({ item }) {
               }}
             >
               <img
-                src="https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/fa_62673a.png"
+                src="/uploads/Gemini_Generated_Image_f8x8eof8x8eof8x8.png"
                 alt="Flipkart Assured"
                 style={{
-                  height: "21px",
+                  height: "24px",
                   width: "auto",
                 }}
               />
             </div>
           </div>
-          {/* Limited Time Deal Button */}
-          <button
-            type="button"
-            style={{
-              width: "100%",
-              padding: "6px 8px",
-              background: "rgb(255, 194, 99)",
-              color: "rgb(0, 0, 0)",
-              border: "none",
-              borderRadius: "3px",
-              fontSize: "13px",
-              fontWeight: "600",
-              cursor: "pointer",
-              marginTop: "auto",
-              transition: "all 0.3s ease",
-              textAlign: "center",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = "rgb(255, 184, 79)";
-              e.target.style.boxShadow = "0 2px 4px rgba(0,0,0,0.15)";
-              e.target.style.transform = "translateY(-1px)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = "rgb(255, 194, 99)";
-              e.target.style.boxShadow = "0 1px 2px rgba(0,0,0,0.1)";
-              e.target.style.transform = "translateY(0)";
-            }}
-            onClick={(e) => e.preventDefault()}
-          >
-            Limited time deal
-          </button>
-
-          {/* Free Delivery Text */}
+         
           <div
             style={{
               fontSize: "12px",
