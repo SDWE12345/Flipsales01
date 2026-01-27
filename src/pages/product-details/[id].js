@@ -202,7 +202,7 @@ export default function extraImagesProductDetails() {
               src="/uploads/Q18Ifxk.webp"
               alt="Logo"
               style={{
-                width: '80px',
+                width: '120px',
                 objectFit: 'contain'
               }}
             />
@@ -578,3 +578,4 @@ export default function extraImagesProductDetails() {
     </div>
   );
 }
+
