@@ -311,19 +311,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Banner */}
-      <img
-        src="/uploads/top-bg.a2aad345a2d903ce5659.jpg"
-        className="w-full"
-        alt="Banner"
-        style={{
-
-          height: "120px",
-          objectFit: "cover",
-          objectPosition: "left"
-        }}
-        onClick={() => trackCustomEvent('BannerClick', { banner_position: 'top' })}
-      />
       <img
         className="w-full md:hidden"
 
@@ -383,4 +370,5 @@ export default function Home() {
       <footer id="seofooter" />
     </div>
   );
+
 }
