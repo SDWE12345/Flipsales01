@@ -11,19 +11,19 @@ const Payments = () => {
     const router = useRouter();
     const [selectedMethod, setSelectedMethod] = useState('');
     const [user, setUser] = useState({});
-    const [product, setProduct] = useState({});
+    const [cartItems, setCartItems] = useState([]); // FIXED: Added cartItems state
     const [upiConfig, setUpiConfig] = useState({});
     const [activeTab, setActiveTab] = useState(null);
     const [showQR, setShowQR] = useState(false);
-    const [time, setTime] = useState(240); // 4 minutes
+    const [time, setTime] = useState(240);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
             const userData = JSON.parse(localStorage.getItem("user") || "{}");
-            const productData = JSON.parse(localStorage.getItem("d1") || "{}");
+            const cart = JSON.parse(localStorage.getItem("cart") || "[]"); // FIXED: Load cart
             setUser(userData);
-            setProduct(productData);
+            setCartItems(cart); // FIXED: Set cart items
             fetchUpiConfig();
             setLoading(false);
         }
@@ -47,7 +47,6 @@ const Payments = () => {
             if (response.ok) {
                 const data = await response.json();
                 setUpiConfig(data.upi || {});
-                // Set default active tab
                 if (data.upi?.Gpay) setActiveTab('gpay');
                 else if (data.upi?.Phonepe) setActiveTab('phonepe');
                 else if (data.upi?.Paytm) setActiveTab('paytm');
@@ -59,109 +58,104 @@ const Payments = () => {
     };
 
     const minutes = Math.floor(time / 60);
-    const seconds = time % 60;// CORRECT VERSION - Calculate totals for all products in cart
+    const seconds = time % 60;
 
-const calculateTotals = () => {
-    let totalMrp = 0;
-    let totalSellingPrice = 0;
-    let totalItems = 0;
+    // FIXED: Calculate totals for all products in cart
+    const calculateTotals = () => {
+        let totalMrp = 0;
+        let totalSellingPrice = 0;
+        let totalItems = 0;
 
-    if (typeof window !== 'undefined' && localStorage) {
-        try {
-            const cartData = JSON.parse(localStorage.getItem("cart") || "[]");
+        cartItems.forEach(item => {
+            const quantity = Number(item.quantity) || 1;
+            const mrp = Number(item.mrp) || 0;
+            const sellingPrice = Number(item.selling_price || item.price) || 0;
             
-            cartData.forEach(item => {
-                const quantity = Number(item.quantity) || 1;
-                const mrp = Number(item.mrp) || 0;
-                const sellingPrice = Number(item.selling_price || item.price) || 0;
-                
-                totalMrp += mrp * quantity;
-                totalSellingPrice += sellingPrice * quantity;
-                totalItems += quantity;
-            });
-        } catch (error) {
-            console.error("Error calculating totals:", error);
-        }
-    }
+            totalMrp += mrp * quantity;
+            totalSellingPrice += sellingPrice * quantity;
+            totalItems += quantity;
+        });
 
-    return {
-        totalMrp,
-        totalSellingPrice,
-        totalDiscount: totalMrp - totalSellingPrice,
-        totalItems
+        return {
+            totalMrp,
+            totalSellingPrice,
+            totalDiscount: totalMrp - totalSellingPrice,
+            totalItems
+        };
     };
-};
 
-// Usage
-const { totalMrp, totalSellingPrice, totalDiscount, totalItems } = calculateTotals();
-const amount = totalSellingPrice;
-const mrp = totalMrp;
-
-console.log("Total MRP:", mrp);
-console.log("Total Selling Price:", amount);
-console.log("Total Discount:", totalDiscount);
-console.log("Total Items:", totalItems);
+    const { totalMrp, totalSellingPrice, totalDiscount, totalItems } = calculateTotals();
+    const amount = totalSellingPrice;
+    const mrp = totalMrp;
 
     const getPaymentUrl = (activeTab) => {
         const upiId = upiConfig.upi || "";
         const name = "Shopping";
         const amt = amount;
 
+        // FIXED: Proper URL encoding
         const encodedUPI = encodeURIComponent(upiId);
+        const encodedName = encodeURIComponent(name);
+        const transactionNote = encodeURIComponent(`Payment for Order #${Date.now()}`);
 
         switch (activeTab) {
             case "gpay":
-               return `tez://upi/pay?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=${encodeURIComponent("Payment to Merchant")}`;
+                return `tez://upi/pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR&tn=${transactionNote}`;
             case "phonepe":
-                return `phonepe://pay?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=Payment`;
+                return `phonepe://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR&tn=${transactionNote}`;
             case "paytm":
-                return `paytmmp://cash_wallet?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=1109653558&tr=1109653558&url=&mode=02&purpose=00&orgid=159002&sign=MEQCIDsRrRTBN5u+J9c16TUURJ4IMiPQQ/Sj1WXW7Ane85mYAiBuwEHt/lPXmMKRjFFnz6+jekgTsKWwyTx44qlCXFkfpQ==&featuretype=money_transfer`;
+                return `paytmmp://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR&tn=${transactionNote}`;
             case "bhim":
-                return `upi://pay?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=Payment`;
+                return `upi://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR&tn=${transactionNote}`;
             default:
-                return `upi://pay?pa=${encodedUPI}&pn=${encodeURIComponent(name)}&am=${amt}&cu=INR&tn=Payment`;
-    
+                return `upi://pay?pa=${encodedUPI}&pn=${encodedName}&am=${amt}&cu=INR&tn=${transactionNote}`;
         }
     };
 
     const handlePaymentMethodSelect = (method) => {
         setSelectedMethod(method);
-
-        // Track add payment info
-        const product = JSON.parse(sessionStorage.getItem('d1') || '{}');
-        tracking.trackAddPaymentInfo(product, method);
+        
+        // Track add payment info with all cart items
+        if (cartItems.length > 0) {
+            cartItems.forEach(item => {
+                tracking.trackAddPaymentInfo(item, method);
+            });
+        }
     };
 
+    // FIXED: Complete purchase tracking function
     const handlePaymentComplete = async () => {
-        const product = JSON.parse(sessionStorage.getItem('d1') || '{}');
-        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+        if (cartItems.length === 0) return;
 
-        // Generate transaction ID
         const transactionId = `ORD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Check if already tracked to prevent duplicates
+        // Check if already tracked
         if (tracking.isPurchaseTracked(transactionId)) {
             console.log('⚠️ Purchase already tracked');
             return;
         }
 
-        // Get client IP for server-side tracking
+        // Get client IP
         const clientIp = await tracking.getClientIp();
 
-        // Track purchase
-        await tracking.trackPurchase({
-            productId: product.id,
-            productName: product.title || product.Title,
-            value: product.price || product.selling_price,
-            quantity: 1,
-            transactionId: transactionId,
-            clientIp: clientIp
-        });
+        // Track purchase for all items
+        for (const item of cartItems) {
+            await tracking.trackPurchase({
+                productId: item.id || item._id,
+                productName: item.title || item.Title,
+                value: (item.selling_price || item.price) * (item.quantity || 1),
+                quantity: item.quantity || 1,
+                transactionId: transactionId,
+                clientIp: clientIp
+            });
+        }
 
         // Clear cart after successful purchase
-        sessionStorage.removeItem('cart');
-        sessionStorage.removeItem('d1');
+        localStorage.removeItem('cart');
+        
+        console.log('✅ Purchase tracking completed');
     };
+
     const paymentMethods = [
         {
             id: 'gpay',
@@ -245,7 +239,7 @@ console.log("Total Items:", totalItems);
                         display: 'inline-block'
                     }}>
                         <QRCode
-                            value={getPaymentUrl()}
+                            value={getPaymentUrl(activeTab)}
                             size={200}
                             level="H"
                             includeMargin={true}
@@ -277,7 +271,10 @@ console.log("Total Items:", totalItems);
                     </div>
 
                     <button
-                        onClick={() => router.push('/')}
+                        onClick={async () => {
+                            await handlePaymentComplete();
+                            router.push('/');
+                        }}
                         style={{
                             width: '100%',
                             padding: '12px',
@@ -292,7 +289,7 @@ console.log("Total Items:", totalItems);
                             boxShadow: '0 4px 12px rgba(40,116,240,0.3)'
                         }}
                     >
-                        Continue Shopping
+                        Payment Completed
                     </button>
 
                     <button
@@ -379,7 +376,6 @@ console.log("Total Items:", totalItems);
                     margin: '0 auto',
                     position: 'relative'
                 }}>
-                    {/* Progress Line */}
                     <div style={{
                         position: 'absolute',
                         top: '14px',
@@ -399,7 +395,6 @@ console.log("Total Items:", totalItems);
                         }} />
                     </div>
 
-                    {/* Steps */}
                     {['Address', 'Order Summary', 'Payment'].map((label, idx) => (
                         <div key={idx} style={{ textAlign: 'center', position: 'relative', zIndex: 1, flex: 1 }}>
                             <div style={{
@@ -439,7 +434,11 @@ console.log("Total Items:", totalItems);
                     borderRadius: '12px',
                     padding: '14px',
                     marginBottom: '0px',
-                    textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px'
+                    textAlign: 'center', 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    gap: '10px'
                 }}>
                     <div style={{
                         fontSize: '14px',
@@ -542,7 +541,10 @@ console.log("Total Items:", totalItems);
                     {paymentMethods.filter(method => method.enabled).map((method) => (
                         <div
                             key={method.id}
-                            onClick={() => { setActiveTab(method.id); handlePaymentMethodSelect(method.id); }}
+                            onClick={() => { 
+                                setActiveTab(method.id); 
+                                handlePaymentMethodSelect(method.id); 
+                            }}
                             style={{
                                 padding: '12px',
                                 borderRadius: '10px',
@@ -622,8 +624,13 @@ console.log("Total Items:", totalItems);
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                            <span style={{ color: '#666' }}>Price (1 item)</span>
+                            <span style={{ color: '#666' }}>Price ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
                             <span style={{ color: '#212121', fontWeight: '600' }}>₹{mrp}</span>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                            <span style={{ color: '#666' }}>Discount</span>
+                            <span style={{ color: '#388e3c', fontWeight: '600' }}>−₹{totalDiscount}</span>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
@@ -721,6 +728,13 @@ console.log("Total Items:", totalItems);
                     </div>
                     <a
                         href={getPaymentUrl(activeTab)}
+                        onClick={(e) => {
+                            // Track payment button click
+                            tracking.trackCustomEvent('PaymentButtonClick', {
+                                payment_method: activeTab,
+                                amount: amount
+                            });
+                        }}
                         style={{
                             flex: 1,
                             maxWidth: '200px',

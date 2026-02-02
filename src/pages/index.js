@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useLayoutEffect, useRef } from 'react';
 import { IoMdArrowBack, IoMdClock, IoMdMenu } from 'react-icons/io';
 import Card from '../componets/Card';
 import Link from 'next/link';
 import { FaShoppingCart } from 'react-icons/fa';
 import { useRouter } from 'next/router';
-import data1 from './products-local.json';
 
 // Import tracking utilities
 import {
@@ -25,18 +24,31 @@ export default function Home() {
   const [time, setTime] = useState(INITIAL_TIME);
   const [products, setProducts] = useState([]);
   const [pixelId, setPixelId] = useState('');
-  const [loading, setLoading] = useState(!true);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Infinite scroll states
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalProducts, setTotalProducts] = useState(0);
+  
+  const observerRef = useRef(null);
+  const loadMoreRef = useRef(null);
 
-  // Fetch products and UPI data
-  const fetchProducts = useCallback(async () => {
+  // Fetch products with pagination
+  const fetchProducts = useCallback(async (pageNum = 1, append = false) => {
     try {
-      setLoading(true);
+      if (pageNum === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
       setError(null);
 
       const token = sessionStorage.getItem('token');
-      const response = await fetch('/api/products', {
+      const response = await fetch(`/api/products?page=${pageNum}&limit=15`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -51,17 +63,29 @@ export default function Home() {
 
       const data = await response.json();
 
-      if (data.pixelId) {
-        localStorage.setItem('pixelId', data.pixelId['FacebookPixel']);
-        setPixelId(data.pixelId);
-      }
-
       if (data.products && Array.isArray(data.products)) {
-        setProducts(data.products);
+        if (append) {
+          // Append new products (infinite scroll)
+          setProducts(prev => [...prev, ...data.products]);
+        } else {
+          // Replace products (initial load)
+          setProducts(data.products);
+        }
+
+        // Update pagination info
+        if (data.pagination) {
+          setHasMore(data.pagination.hasNext);
+          setTotalProducts(data.pagination.total);
+        } else {
+          // Fallback if no pagination data
+          setHasMore(data.products.length === 15);
+        }
+      } else {
+        setHasMore(false);
       }
 
       // Identify user if token exists
-      if (token) {
+      if (token && pageNum === 1) {
         try {
           const userData = JSON.parse(atob(token.split('.')[1]));
           identifyUser({
@@ -77,15 +101,62 @@ export default function Home() {
     } catch (err) {
       console.error('Error fetching products:', err);
       setError(err.message);
+      setHasMore(false);
 
       // Track error event
       trackCustomEvent('FetchProductsError', {
-        error_message: err.message
+        error_message: err.message,
+        page: pageNum
       });
     } finally {
-      setLoading(false);
+      if (pageNum === 1) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
     }
   }, []);
+
+  // Load more products
+  const loadMoreProducts = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchProducts(nextPage, true);
+
+      // Track pagination event
+      trackCustomEvent('LoadMoreProducts', {
+        page: nextPage,
+        current_products: products.length
+      });
+    }
+  }, [loadingMore, hasMore, page, fetchProducts, products.length]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const options = {
+      root: null,
+      rootMargin: '200px', // Trigger 200px before reaching the element
+      threshold: 0.1
+    };
+
+    observerRef.current = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasMore && !loadingMore && !loading) {
+        loadMoreProducts();
+      }
+    }, options);
+
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [hasMore, loadingMore, loading, loadMoreProducts]);
 
   // Countdown timer effect
   useEffect(() => {
@@ -95,7 +166,6 @@ export default function Home() {
       setTime(prevTime => {
         if (prevTime <= 1) {
           clearInterval(timer);
-          // Track timer completion
           trackCustomEvent('DealTimerCompleted');
           return 0;
         }
@@ -107,8 +177,8 @@ export default function Home() {
   }, [time]);
 
   // Initial data fetch
-  useEffect(() => {
-    fetchProducts();
+  useLayoutEffect(() => {
+    fetchProducts(1, false);
 
     // Track home page view
     trackCustomEvent('HomePageView', {
@@ -138,41 +208,22 @@ export default function Home() {
     }
   };
 
-  // Handle product view tracking
-  const handleProductView = (product) => {
-    trackProductView(product);
-  };
-
-  // Handle add to cart with tracking
-  const handleAddToCart = (product) => {
-    // Track add to cart event
-    trackAddToCart(product);
-
-    // Update local storage
-    const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    currentCart.push(product);
-    localStorage.setItem('cart', JSON.stringify(currentCart));
-
-    // Show notification
-    alert(`${product.title || product.Title} added to cart!`);
-  };
-
   // Handle search with tracking
   const handleSearch = () => {
     if (searchQuery.trim()) {
       trackSearch(searchQuery);
-
-      // Navigate to search page or filter products
-      router.push(`#/mobile.html#search?q=${encodeURIComponent(searchQuery)}`);
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
   };
 
-  // Handle deal section view
-  const handleDealView = () => {
-    trackCustomEvent('DealSectionView', {
-      deal_type: 'daily_deal',
-      time_remaining: time
-    });
+  // Handle cart click
+  const handleCartClick = () => {
+    const cartCount = getCartCount();
+    if (cartCount > 0) {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      trackInitiateCheckout(cart);
+    }
+    router.push('/cart');
   };
 
   // Handle sale live button click
@@ -181,15 +232,6 @@ export default function Home() {
       button_position: 'deals_section',
       timestamp: new Date().toISOString()
     });
-  };
-
-  // Handle cart click
-  const handleCartClick = () => {
-    const cartCount = getCartCount();
-    if (cartCount > 0) {
-      trackInitiateCheckout(JSON.parse(localStorage.getItem('cart') || '[]'));
-    }
-    router.push('/cart');
   };
 
   return (
@@ -317,7 +359,6 @@ export default function Home() {
         className="w-full"
         alt="Banner"
         style={{
-
           height: "120px",
           objectFit: "cover",
           objectPosition: "left"
@@ -326,7 +367,6 @@ export default function Home() {
       />
       <img
         className="w-full md:hidden"
-
         src="/uploads/image.png"
         alt="Mobile Banner"
       />
@@ -341,12 +381,14 @@ export default function Home() {
               <div className="font-bold text-red-600">{formatTime(time)}</div>
             </div>
           </div>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded font-semibold">
+          <button 
+            className="bg-blue-600 text-white px-4 py-2 rounded font-semibold"
+            onClick={handleSaleLiveClick}
+          >
             SALE IS LIVE
           </button>
         </div>
       </div>
-      {/* Products Grid */}
       <div className="" style={{ background: "#fff" }}>
         {loading ? (
           <div className="text-center py-12">
@@ -362,20 +404,53 @@ export default function Home() {
             <p className="text-red-600 mb-4 error-message">Error: {error}</p>
             <button
               className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-              onClick={fetchProducts}
+              onClick={() => {
+                setPage(1);
+                fetchProducts(1, false);
+              }}
             >
               Retry
             </button>
           </div>
         ) : products && products.length > 0 ? (
-          <div className="cards-grid">
-            {products.map((item, index) => (
-              <Card key={item._id || item.id || index} item={item} index={index} />
-            ))}
-          </div>
+          <>
+            <div className="cards-grid">
+              {products.map((item, index) => (
+                <Card key={item._id || item.id || index} item={item} index={index} />
+              ))}
+            </div>
+
+            {/* Infinite Scroll Trigger */}
+            <div ref={loadMoreRef} className="w-full py-8">
+              {loadingMore && (
+                <div className="text-center">
+                  <div className="inline-block">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                  <p className="mt-2 text-gray-600 text-sm">Loading more products...</p>
+                </div>
+              )}
+              
+              {!hasMore && products.length > 0 && (
+                <div className="text-center text-gray-500 text-sm">
+                  <p className="font-medium">🎉 You've reached the end!</p>
+                  <p className="mt-1">All {totalProducts} products loaded</p>
+                </div>
+              )}
+            </div>
+          </>
         ) : (
-          <div className="no-products">
+          <div className="no-products text-center py-12">
             <p className="text-gray-600">No products available</p>
+            <button
+              className="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+              onClick={() => {
+                setPage(1);
+                fetchProducts(1, false);
+              }}
+            >
+              Refresh
+            </button>
           </div>
         )}
       </div>

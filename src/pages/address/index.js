@@ -11,12 +11,14 @@ const Address = () => {
     const router = useRouter();
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
-useEffect(() => {
-        const cart = JSON.parse(sessionStorage.getItem('d1') || '[]');
+
+    // FIXED: Load cart from localStorage (not sessionStorage)
+    useEffect(() => {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
         if (cart.length > 0) {
             tracking.trackInitiateCheckout(cart);
-        };
-}, [])
+        }
+    }, []);
 
     const validateForm = (values) => {
         const newErrors = {};
@@ -51,7 +53,6 @@ useEffect(() => {
             newErrors.house = "House/Building details required";
         }
 
-        
         return newErrors;
     };
 
@@ -86,19 +87,33 @@ useEffect(() => {
             }
 
             setErrors({});
+            
+            // Save user data
             localStorage.setItem("user", JSON.stringify({
-                address: `${values.house},${values.city}, ${values.state} - ${values.pincode}`,
+                address: `${values.house}, ${values.city}, ${values.state} - ${values.pincode}`,
                 name: values.fname,
                 phone: Number(values.mobile),
             }));
-               tracking.identifyUser({
-            email: values?.email||"",
-            phone: values.mobile,
-            name: values.fname,
-            city: values.city,
-            state: values.state,
-            pincode: values.pincode
-        });
+
+            // FIXED: Identify user with proper data structure
+            tracking.identifyUser({
+                email: values?.email || "",
+                phone: values.mobile,
+                firstName: values.fname.split(' ')[0],
+                lastName: values.fname.split(' ').slice(1).join(' '),
+                city: values.city,
+                state: values.state,
+                zip: values.pincode,
+                country: 'IN'
+            });
+
+            // FIXED: Track custom event for address completion
+            tracking.trackCustomEvent('AddressCompleted', {
+                has_city: !!values.city,
+                has_state: !!values.state,
+                has_pincode: !!values.pincode
+            });
+
             router.push("/ordersummdary");
         },
     });
@@ -142,26 +157,26 @@ useEffect(() => {
                     maxWidth: '600px',
                     margin: '0 auto'
                 }}>
-                     <div
-                            onClick={() => router.push('/')}
+                    <div
+                        onClick={() => router.push('/')}
+                        style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <IoMdArrowBack
                             style={{
-                              width: '36px',
-                              height: '36px',
-                              borderRadius: '50%',
-                              background: 'rgba(255,255,255,0.15)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <IoMdArrowBack
-                              style={{
                                 color: '#fff',
                                 fontSize: '20px'
-                              }}
-                            />
-                          </div>
+                            }}
+                        />
+                    </div>
                     <h1 style={{ 
                         color: '#fff', 
                         fontSize: '16px', 
@@ -189,7 +204,6 @@ useEffect(() => {
                     margin: '0 auto',
                     position: 'relative'
                 }}>
-                    {/* Progress Line Background */}
                     <div style={{
                         position: 'absolute',
                         top: '14px',
@@ -200,7 +214,6 @@ useEffect(() => {
                         zIndex: 0,
                         borderRadius: '2px'
                     }}>
-                        {/* Active Progress */}
                         <div style={{
                             height: '100%',
                             width: '0%',
@@ -210,7 +223,6 @@ useEffect(() => {
                         }} />
                     </div>
 
-                    {/* Step 1 - Address */}
                     <div style={{ 
                         textAlign: 'center', 
                         position: 'relative', 
@@ -244,7 +256,6 @@ useEffect(() => {
                         </div>
                     </div>
 
-                    {/* Step 2 - Order Summary */}
                     <div style={{ 
                         textAlign: 'center', 
                         position: 'relative', 
@@ -278,7 +289,6 @@ useEffect(() => {
                         </div>
                     </div>
 
-                    {/* Step 3 - Payment */}
                     <div style={{ 
                         textAlign: 'center', 
                         position: 'relative', 
@@ -782,7 +792,6 @@ useEffect(() => {
                                 </div>
                             )}
                         </div>
- 
                     </div>
 
                     <button 

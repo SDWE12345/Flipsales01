@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { IoMdArrowBack, IoMdClose } from 'react-icons/io';
+import tracking from '@/utils/tracking';
 
 export default function CartPage() {
   const router = useRouter();
@@ -12,6 +13,11 @@ export default function CartPage() {
 
   useEffect(() => {
     loadCart();
+    
+    // FIXED: Track cart page view
+    tracking.trackCustomEvent('CartPageView', {
+      timestamp: new Date().toISOString()
+    });
   }, []);
 
   const loadCart = () => {
@@ -29,19 +35,47 @@ export default function CartPage() {
     if (newQuantity < 1) return;
     
     const updatedCart = [...cartItems];
+    const oldQuantity = updatedCart[index].quantity;
     updatedCart[index].quantity = newQuantity;
+    
     setCartItems(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
+
+    // FIXED: Track quantity change
+    if (newQuantity > oldQuantity) {
+      tracking.trackCustomEvent('CartQuantityIncreased', {
+        product_id: updatedCart[index].id || updatedCart[index]._id,
+        product_name: updatedCart[index].Title || updatedCart[index].title,
+        old_quantity: oldQuantity,
+        new_quantity: newQuantity
+      });
+    }
   };
 
   const removeItem = (index) => {
+    const removedItem = cartItems[index];
     const updatedCart = cartItems.filter((_, i) => i !== index);
+    
     setCartItems(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
+
+    // FIXED: Track item removal
+    tracking.trackCustomEvent('RemoveFromCart', {
+      content_ids: [removedItem.id || removedItem._id],
+      content_name: removedItem.Title || removedItem.title,
+      value: parseFloat(removedItem.selling_price || removedItem.price || 0),
+      currency: 'INR'
+    });
   };
 
   const clearCart = () => {
     if (confirm('Are you sure you want to clear your cart?')) {
+      // FIXED: Track cart clear
+      tracking.trackCustomEvent('CartCleared', {
+        items_count: cartItems.length,
+        total_value: calculateTotal()
+      });
+
       setCartItems([]);
       localStorage.setItem('cart', JSON.stringify([]));
     }
@@ -70,29 +104,29 @@ export default function CartPage() {
       alert('Your cart is empty!');
       return;
     }
+
+    // FIXED: Track checkout initiation
+    tracking.trackInitiateCheckout(cartItems);
+
     localStorage.setItem('data', JSON.stringify(cartItems));
     router.push('/address');
   };
 
-  // Helper function to get product title
   const getProductTitle = (item) => {
     const title = item.Title || item.title || 'Product';
-    // Truncate long titles for better display
     if (title.length > 80) {
       return title.substring(0, 80) + '...';
     }
     return title;
   };
 
-  // Helper function to get product image
   const getProductImage = (item) => {
+    if (item.images && item.images[0]) return item.images[0];
     if (item.images0) return item.images0;
     if (item.image) return item.image;
-    if (item.images && item.images.length > 0) return item.images[0];
     return '/placeholder.jpg';
   };
 
-  // Helper function to get product price
   const getProductPrice = (item) => {
     return item.selling_price || item.price || 0;
   };

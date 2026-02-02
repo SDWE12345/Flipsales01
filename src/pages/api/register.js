@@ -1,17 +1,28 @@
-// pages/api/register.js
-import clientPromise from '../../lib/mongodb';
+// pages/api/auth/register.js - Optimized Registration API
+import { findOne, insertOne } from '../lib/db/helpers';
+import { generateToken } from '../lib/middleware/auth';
+import { 
+  validateEmail, 
+  validatePassword, 
+  sanitizeString,
+  ValidationError 
+} from '../lib/utils/validation';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+    return res.status(405).json({ 
+      status: 0, 
+      message: 'Method not allowed' 
+    });
   }
 
-  try {
-    const { email, password, name } = req.body;
+  const startTime = Date.now();
 
-    // Validation
+  try {
+    const { email, password, name, phone } = req.body;
+
+    // Validate required fields
     if (!email || !password) {
       return res.status(400).json({ 
         status: 0,
@@ -19,65 +30,101 @@ export default async function handler(req, res) {
       });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ 
-        status: 0,
-        message: 'Password must be at least 6 characters' 
-      });
-    }
-
-    const client = await clientPromise;
-    const db = client.db('yourDbName');
-    const usersCollection = db.collection('users');
+    // Validate and sanitize inputs
+    const validatedEmail = validateEmail(email);
+    validatePassword(password, 6);
+    const sanitizedName = name ? sanitizeString(name, 100) : validatedEmail.split('@')[0];
 
     // Check if user already exists
-    const existingUser = await usersCollection.findOne({ email });
+    const existingUser = await findOne('users', { email: validatedEmail });
 
     if (existingUser) {
-      return res.status(400).json({ 
+      return res.status(409).json({ 
         status: 0,
-        message: 'User already exists with this email' 
+        message: 'User already exists with this email',
+        code: 'USER_EXISTS'
       });
     }
 
-    // Hash password
+    // Hash password with bcrypt
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create new user
     const newUser = {
-      email,
+      email: validatedEmail,
       password: hashedPassword,
-      name: name || email.split('@')[0],
-      createdAt: new Date(),
-      updatedAt: new Date()
+      name: sanitizedName,
+      phone: phone ? sanitizeString(phone, 20) : null,
+      role: 'user',
+      isEmailVerified: false,
+      isActive: true,
+      profile: {
+        avatar: null,
+        bio: null
+      },
+      preferences: {
+        newsletter: true,
+        notifications: true
+      }
     };
 
-    const result = await usersCollection.insertOne(newUser);
+    const insertedUser = await insertOne('users', newUser);
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: result.insertedId.toString(), email },
-      process.env.JWT_SECRET || 'xxxxz',
-      { expiresIn: '24h' }
-    );
+    // Generate JWT tokens
+    const token = generateToken({
+      userId: insertedUser._id.toString(),
+      email: insertedUser.email,
+      role: insertedUser.role
+    }, '24h');
 
-    res.status(201).json({ 
+    const refreshToken = generateToken({
+      userId: insertedUser._id.toString(),
+      type: 'refresh'
+    }, '7d');
+
+    const duration = Date.now() - startTime;
+
+    // Success response (exclude password)
+    return res.status(201).json({ 
       status: 1,
       message: 'User registered successfully', 
       token,
+      refreshToken,
       user: {
-        id: result.insertedId,
-        email,
-        name: newUser.name
+        id: insertedUser._id,
+        email: insertedUser.email,
+        name: insertedUser.name,
+        role: insertedUser.role,
+        createdAt: insertedUser.createdAt
+      },
+      _meta: {
+        duration: `${duration}ms`
       }
     });
 
   } catch (error) {
     console.error('Registration Error:', error);
-    res.status(500).json({ 
+
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ 
+        status: 0,
+        message: error.message,
+        field: error.field
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(409).json({ 
+        status: 0,
+        message: 'User already exists',
+        code: 'DUPLICATE_KEY'
+      });
+    }
+
+    return res.status(500).json({ 
       status: 0,
-      message: 'Internal Server Error',
-      error: error.message 
+      message: 'Internal server error',
+      code: 'SERVER_ERROR'
     });
   }
 }

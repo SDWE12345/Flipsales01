@@ -1,6 +1,6 @@
 // pages/api/Upichange.js
 import clientPromise from '../../lib/mongodb';
-import authenticateToken from './middleware/auth';
+import authenticateToken from './lib/middleware/auth';
 
 export default async function handler(req, res) {
   try {
