@@ -34,9 +34,7 @@
 // lib/mongodb.js
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI
-console.log("uri", uri);
-
+const uri = 'mongodb+srv://v4x123:v4x123@cluster0.i3hnzcs.mongodb.net/demobhai';
 const options = {
   maxPoolSize: 10,
   minPoolSize: 5,

@@ -51,6 +51,7 @@ export default function Card({ item }) {
       style={{
         textDecoration: "none",
         display: "block",
+        width: "50%",
         padding: "0",
         boxSizing: "border-box",
       }}

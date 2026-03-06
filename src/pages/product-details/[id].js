@@ -8,8 +8,7 @@ import { AiFillStar } from 'react-icons/ai';
 import { IoMdArrowBack } from 'react-icons/io';
 import tracking from '@/utils/tracking';
 
-// FIXED: Changed function name from lowercase to PascalCase
-export default function ExtraImagesProductDetails() {
+export default function extraImagesProductDetails() {
   const router = useRouter();
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState(6);
@@ -20,6 +19,11 @@ export default function ExtraImagesProductDetails() {
   const sliderRef = useRef(null);
 
   useEffect(() => {
+    tracking.trackProductView(product, {
+      referrer: 'search',
+      campaign: 'summer_sale'
+    });
+
     loadProduct();
   }, []);
 
@@ -41,7 +45,7 @@ export default function ExtraImagesProductDetails() {
         const nextIndex = prev + 1;
         return nextIndex >= product.images.length ? 0 : nextIndex;
       });
-    }, 4000);
+    }, 4000); // Change slide every 4 seconds
 
     return () => clearInterval(autoSlideTimer);
   }, [product, isAutoPlaying]);
@@ -52,12 +56,6 @@ export default function ExtraImagesProductDetails() {
       if (storedData) {
         const data = JSON.parse(storedData);
         setProduct(data);
-        
-        // FIXED: Track product view after loading
-        tracking.trackProductView(data, {
-          referrer: document.referrer || 'direct',
-          page_type: 'product_detail'
-        });
       }
       setLoading(false);
     } catch (error) {
@@ -88,10 +86,7 @@ export default function ExtraImagesProductDetails() {
     }
 
     localStorage.setItem('cart', JSON.stringify(existingCart));
-    
-    // FIXED: Track add to cart
     tracking.trackAddToCart(product, 1);
-    
     if (e !== "demo") {
       router.push('/cart');
     }
@@ -213,6 +208,7 @@ export default function ExtraImagesProductDetails() {
             />
           </div>
 
+          {/* Right Section */}
           <Link
             href="/cart"
             style={{
@@ -226,7 +222,9 @@ export default function ExtraImagesProductDetails() {
               justifyContent: 'center'
             }}
           >
+
             <FaShoppingCart style={{ color: "#fff" }} />
+            {/* Cart Count */}
             {getCartCount() > 0 && (
               <span
                 style={{
@@ -254,13 +252,15 @@ export default function ExtraImagesProductDetails() {
         </div>
       </header>
 
+      {/* Product Images with Auto-Slider */}
       <div style={{ background: '#fff', padding: '16px', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '12px', position: 'absolute', right: '24px', top: '24px', zIndex: 999 }}>
           <FaHeart style={{ fontSize: '24px', color: '#868484ff', cursor: 'pointer' }} />
           <FaShare style={{ fontSize: '24px', color: '#868484ff', cursor: 'pointer' }} />
         </div>
 
-        <div style={{ position: 'relative' }}>
+        {/* Main Image Slider */}
+        <div style={{ position: 'relative', }}>
           <div ref={sliderRef} style={{
             position: 'relative',
             overflow: 'hidden',
@@ -298,6 +298,7 @@ export default function ExtraImagesProductDetails() {
             </div>
           </div>
 
+          {/* Navigation Arrows */}
           {images.length > 1 && (
             <>
               <button
@@ -367,6 +368,7 @@ export default function ExtraImagesProductDetails() {
             </>
           )}
 
+          {/* Slide Indicators */}
           {images.length > 1 && (
             <div style={{
               position: 'absolute',
@@ -400,6 +402,7 @@ export default function ExtraImagesProductDetails() {
           )}
         </div>
 
+        {/* Thumbnail Images */}
         {images.length > 1 && (
           <div style={{
             display: 'flex',
@@ -452,7 +455,7 @@ export default function ExtraImagesProductDetails() {
         )}
       </div>
 
-      {/* Product Details Section - Rest of the code remains the same */}
+      {/* Product Info */}
       <div style={{ background: '#fff', padding: '16px', marginTop: '8px' }}>
         <h1 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px 0', lineHeight: '1.4' }}>
           {product.Title || product.title}
@@ -490,6 +493,7 @@ export default function ExtraImagesProductDetails() {
         </h4>
       </div>
 
+      {/* Features */}
       <div style={{ background: '#fff', padding: '16px', marginTop: '8px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
           <div style={{ flex: 1 }}>
@@ -507,6 +511,7 @@ export default function ExtraImagesProductDetails() {
         </div>
       </div>
 
+      {/* Product Details */}
       <div style={{ background: '#fff', padding: '16px', marginTop: '8px', marginBottom: '80px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>Product Details</h2>
         <div style={{ fontSize: '14px', lineHeight: '1.6', color: '#212121', whiteSpace: 'pre-wrap' }}>
@@ -525,6 +530,7 @@ export default function ExtraImagesProductDetails() {
         </div>
       </div>
 
+      {/* Bottom Buttons */}
       <div style={{
         position: 'fixed',
         bottom: 0,
@@ -572,3 +578,4 @@ export default function ExtraImagesProductDetails() {
     </div>
   );
 }
+

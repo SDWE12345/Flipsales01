@@ -1,15 +1,11 @@
-// lib/mongodb.js - Optimized MongoDB Connection with Pooling
+// utils/mongodb.js
 import { MongoClient } from 'mongodb';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your MONGODB_URI to .env.local');
-}
+const uri = process.env.MONGODB_URI || 'mongodb+srv://v4x123:v4x123@cluster0.i3hnzcs.mongodb.net/demobhai';
 
-const uri = process.env.MONGODB_URI;
 const options = {
   maxPoolSize: 10,
   minPoolSize: 5,
-  maxIdleTimeMS: 30000,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
 };
@@ -18,16 +14,24 @@ let client;
 let clientPromise;
 
 if (process.env.NODE_ENV === 'development') {
-  // In development, use a global variable to preserve connection across hot reloads
+  // In development mode, use a global variable to preserve the client across hot reloads
   if (!global._mongoClientPromise) {
     client = new MongoClient(uri, options);
     global._mongoClientPromise = client.connect();
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  // In production, create a new client
+  // In production mode, create a new client
   client = new MongoClient(uri, options);
   clientPromise = client.connect();
 }
 
+// Export the connectToDatabase function that your API routes are importing
+export async function connectToDatabase() {
+  const client = await clientPromise;
+  const db = client.db('yourDbName'); // specify your database name
+  return { client, db };
+}
+
+// Also export the default clientPromise for backward compatibility
 export default clientPromise;

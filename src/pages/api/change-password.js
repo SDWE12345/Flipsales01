@@ -1,7 +1,7 @@
 // pages/api/change-password.js
 
 import { connectToDatabase } from '../../utils/mongodb';
-import authenticateToken from './lib/middleware/auth';
+import authenticateToken from './middleware/auth';
 
 export default async function handler(req, res) {
   // Apply the middleware for token verification
